@@ -4,7 +4,7 @@ setlocal EnableDelayedExpansion
 cd /d "%~dp0"
 
 echo ========================================================
-echo   Откат русификации Google Antigravity
+echo   (for view log) Откат русификации Google Antigravity
 echo ========================================================
 echo.
 

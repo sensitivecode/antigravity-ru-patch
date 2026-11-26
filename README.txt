@@ -29,7 +29,7 @@
                             подтверждение [Y/n] или выбор из списка)
 - patch_debug.bat         — диагностика, сброс и живой лог в Desktop\patchdebug
 - redo_patch.bat          — быстрый откат на английский в 1 вопрос (+ перезапуск)
-- restore_patch.bat       — откат к оригинальным .bak-файлам (в консоли)
+- restore_patch.bat       — (for view log) откат к оригинальным .bak-файлам (с паузой)
 
 Если русификатор слетел после обновления Antigravity — закройте
 приложение и повторно запустите apply_patch.bat (или apply_patchSEARCHER.bat).
@@ -60,9 +60,9 @@
   Modifying language_server.exe breaks Authenticode signatures and may
   trigger antivirus/SmartScreen warnings.
 - Run apply_patch.bat (default path), apply_patchSEARCHER.bat (custom
-  path discovery with [Y/n] confirmation), restore_patch.bat (revert),
-  or patch_debug.bat (live patcher log in Desktop\patchdebug; privacy:
-  Antigravity logs require explicit "logs on").
+  path discovery with [Y/n] confirmation), redo_patch.bat (1-prompt revert),
+  restore_patch.bat (for view log, pauses on exit), or patch_debug.bat
+  (live patcher log in Desktop\patchdebug; Antigravity logs require "logs on").
 - Unofficial community patch, NOT affiliated with Google LLC, provided AS IS.
 
 ----------------------------------------------------------------
@@ -72,7 +72,7 @@
 - apply_patchSEARCHER.bat — поиск нестандартной папки + установка
 - patch_debug.bat         — диагностика и живой лог (Desktop\patchdebug)
 - redo_patch.bat          — быстрый откат на английский (в 1 вопрос)
-- restore_patch.bat       — откат к оригиналу (в консоли)
+- restore_patch.bat       — (for view log) откат к оригиналу с паузой в консоли
 - patch_antigravity_ru.py — основной скрипт патча (ASAR, поиск, дебаг)
 - ru_i18n.js              — словарь и правила склонения/шаблонов
 - ru_dom_translator.js    — DOM-переводчик веб-интерфейса (с кэшем)

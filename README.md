@@ -23,7 +23,8 @@
 - [`apply_patch.bat`](apply_patch.bat) — **стандартный путь установки** (`%LOCALAPPDATA%\Programs\antigravity`).
 - [`apply_patchSEARCHER.bat`](apply_patchSEARCHER.bat) — **нестандартная папка установки** (другой диск, перенесённая папка и т.д.): ищет по процессам, реестру, ярлыкам, `PATH` и фиксированным дискам с подтверждением `[Y/n]` (или выбором номера `[1-N]`, если найдено несколько установок).
 - [`patch_debug.bat`](patch_debug.bat) — **диагностика и сброс**: откат к оригиналу, повторная установка патча и живой терминал логов.
-- [`redo_patch.bat`](redo_patch.bat) — **быстрый откат на английский в 1 вопрос**: одним подтверждением `[Y/n]` закрывает Antigravity, возвращает оригинальные `.bak`-файлы, перезапускает Antigravity и закрывает консоль (есть также консольный [`restore_patch.bat`](restore_patch.bat)).
+- [`redo_patch.bat`](redo_patch.bat) — **быстрый откат на английский в 1 вопрос**: одним подтверждением `[Y/n]` закрывает Antigravity, возвращает оригинальные `.bak`-файлы, перезапускает Antigravity и закрывает консоль.
+- [`restore_patch.bat`](restore_patch.bat) — **(for view log)** откат к оригинальным `.bak`-файлам с паузой в консоли для просмотра результата.
 
 ### Установка и требования
 - **Требования**: Windows 10 / 11, Python 3.8+ (с python.org, добавленный в `PATH`).
@@ -77,7 +78,8 @@ Unofficial Russian localization patcher for **Google Antigravity** (Electron she
 - [`apply_patch.bat`](apply_patch.bat) — default install path (`%LOCALAPPDATA%\Programs\antigravity`).
 - [`apply_patchSEARCHER.bat`](apply_patchSEARCHER.bat) — custom/moved installation path; searches processes, registry, shortcuts, `PATH`, and fixed drives, then asks `[Y/n]` confirmation (or numbered choice `[1-N]`).
 - [`patch_debug.bat`](patch_debug.bat) — diagnostic reset + live logger into `Desktop\patchdebug`.
-- [`restore_patch.bat`](restore_patch.bat) — restores original files from `.bak` backups.
+- [`redo_patch.bat`](redo_patch.bat) — one-prompt English rollback, relaunches Antigravity and closes the terminal automatically.
+- [`restore_patch.bat`](restore_patch.bat) — **(for view log)** restores original `.bak` files and pauses in the terminal so you can inspect the output.
 
 ### Requirements & Usage
 - **Requirements**: Windows 10 / 11, Python 3.8+ (from python.org, added to `PATH`).
