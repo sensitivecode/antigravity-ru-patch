@@ -15,16 +15,27 @@ Patches `resources/app.asar` cleanly (without modifying signed binaries):
 from __future__ import annotations
 
 import argparse
+import contextlib
+import ctypes
+from datetime import datetime
 import hashlib
+import io
 import json
 import os
 import shutil
 import struct
+import subprocess
 import sys
+import threading
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
+
+try:
+    import winreg
+except ImportError:  # pragma: no cover - non-Windows fallback
+    winreg = None
 
 PATCH_DIR = Path(__file__).resolve().parent
 BLOCK_SIZE = 4 * 1024 * 1024  # 4 MiB, standard ASAR integrity block size
@@ -764,6 +775,547 @@ def cmd_restore(install_dir: Path) -> None:
     restore_language_server_titles(install_dir)
 
 
+def _sha256_file(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as f:
+        while True:
+            chunk = f.read(1024 * 1024)
+            if not chunk:
+                break
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def verify_antigravity_dir(cand: Path) -> Optional[dict]:
+    """Verify an Antigravity directory by reference layout, ASAR metadata/hashes, and binaries."""
+    asar_path = cand / "resources" / "app.asar"
+    exe_path = cand / "Antigravity.exe"
+    ls_path = cand / "resources" / "bin" / "language_server.exe"
+    ru_pak = cand / "locales" / "ru.pak"
+    if not asar_path.is_file() or not exe_path.is_file():
+        return None
+
+    try:
+        with exe_path.open("rb") as f:
+            if f.read(2) != b"MZ":
+                return None
+    except OSError:
+        return None
+
+    layout_hits = 2  # Antigravity.exe + resources/app.asar
+    if ls_path.is_file():
+        layout_hits += 1
+    if ru_pak.is_file():
+        layout_hits += 1
+
+    # Check ASAR header + embedded package.json identity + SHA-256 block integrity on core files
+    read_path = cand / "resources" / "app.asar.bak"
+    currently_patched = False
+    try:
+        currently_patched = is_patched(asar_path)
+    except Exception:
+        return None
+
+    inspect_asar = read_path if (currently_patched and read_path.is_file()) else asar_path
+    try:
+        header, files = read_asar(inspect_asar)
+    except Exception:
+        return None
+
+    if "package.json" not in files:
+        return None
+    try:
+        pkg = json.loads(files["package.json"].decode("utf-8"))
+    except Exception:
+        return None
+
+    name_lc = str(pkg.get("name", "")).lower()
+    prod_lc = str(pkg.get("productName", "")).lower()
+    if "antigravity" not in name_lc and "antigravity" not in prod_lc:
+        return None
+
+    core_required = ("package.json", "dist/main.js", "dist/preload.js", "dist/menu.js")
+    if not all(k in files for k in core_required):
+        return None
+
+    # Verify SHA-256 integrity hashes recorded in ASAR header match actual bytes
+    hashes_ok = True
+    cur_node = header
+    for rel in core_required:
+        node = header
+        for part in rel.split("/"):
+            node = node.get("files", {}).get(part, {})
+        expected_hash = node.get("integrity", {}).get("hash")
+        actual_hash = hashlib.sha256(files[rel]).hexdigest()
+        if expected_hash != actual_hash:
+            hashes_ok = False
+            break
+
+    ls_patched = False
+    ls_sha256 = None
+    if ls_path.is_file():
+        try:
+            ls_sha256 = _sha256_file(ls_path)
+            ls_data = ls_path.read_bytes()
+            ls_patched = LS_TITLE_PROMPT_NEW in ls_data
+        except OSError:
+            pass
+
+    return {
+        "path": str(cand),
+        "product_name": pkg.get("productName") or pkg.get("name") or "Antigravity",
+        "version": str(pkg.get("version", "unknown")),
+        "layout": f"{layout_hits}/4",
+        "asar_hashes_ok": hashes_ok,
+        "asar_patched": currently_patched,
+        "ls_patched": ls_patched,
+        "fuse_integrity": check_asar_integrity_fuse(cand),
+        "exe_sha256": _sha256_file(exe_path),
+        "asar_sha256": _sha256_file(asar_path),
+        "ls_sha256": ls_sha256,
+    }
+
+
+def _candidate_dirs_from_system() -> List[Path]:
+    """Collect candidate Antigravity directories from defaults, PATH, processes, registry, and shortcuts."""
+    raw: List[Path] = []
+    for d in DEFAULT_INSTALL_DIRS:
+        if d:
+            raw.append(d)
+
+    # All user profiles under C:\Users
+    users_root = Path(os.environ.get("SystemDrive", "C:") + "\\Users")
+    if users_root.is_dir():
+        try:
+            for u in users_root.iterdir():
+                if u.is_dir():
+                    raw.append(u / "AppData" / "Local" / "Programs" / "antigravity")
+        except OSError:
+            pass
+
+    # PATH executables
+    for exe_name in ("Antigravity.exe", "antigravity", "antigravity.cmd"):
+        found = shutil.which(exe_name)
+        if found:
+            p = Path(found).resolve()
+            raw.extend([p.parent, p.parent.parent])
+
+    # Running processes
+    if os.name == "nt":
+        try:
+            ps = (
+                "Get-CimInstance Win32_Process -Filter "
+                "\"Name='Antigravity.exe' or Name='language_server.exe'\" "
+                "| Select-Object -ExpandProperty ExecutablePath"
+            )
+            out = subprocess.check_output(
+                ["powershell", "-NoProfile", "-Command", ps],
+                text=True,
+                stderr=subprocess.DEVNULL,
+                timeout=8,
+            )
+            for line in out.splitlines():
+                line = line.strip()
+                if line:
+                    p = Path(line)
+                    raw.extend([p.parent, p.parent.parent.parent])
+        except Exception:
+            pass
+
+    # Windows Registry (Uninstall + App Paths)
+    if winreg is not None:
+        uninstall_roots = [
+            (winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Uninstall"),
+            (winreg.HKEY_LOCAL_MACHINE, r"Software\Microsoft\Windows\CurrentVersion\Uninstall"),
+            (winreg.HKEY_LOCAL_MACHINE, r"Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"),
+        ]
+        for hive, subkey in uninstall_roots:
+            try:
+                with winreg.OpenKey(hive, subkey) as k:
+                    count = winreg.QueryInfoKey(k)[0]
+                    for i in range(count):
+                        try:
+                            name = winreg.EnumKey(k, i)
+                            with winreg.OpenKey(k, name) as sk:
+                                try:
+                                    dname, _ = winreg.QueryValueEx(sk, "DisplayName")
+                                except OSError:
+                                    dname = ""
+                                if "antigravity" in str(dname).lower() or "antigravity" in name.lower():
+                                    for val_name in ("InstallLocation", "DisplayIcon", "UninstallString"):
+                                        try:
+                                            val, _ = winreg.QueryValueEx(sk, val_name)
+                                            cleaned = str(val).strip().strip('"').split(",")[0]
+                                            if cleaned.lower().endswith(".exe"):
+                                                cleaned = str(Path(cleaned).parent)
+                                            if cleaned:
+                                                raw.append(Path(cleaned))
+                                        except OSError:
+                                            pass
+                        except OSError:
+                            continue
+            except OSError:
+                continue
+
+        for hive in (winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE):
+            try:
+                with winreg.OpenKey(hive, r"Software\Microsoft\Windows\CurrentVersion\App Paths\Antigravity.exe") as k:
+                    val, _ = winreg.QueryValueEx(k, "")
+                    if val:
+                        raw.append(Path(str(val).strip().strip('"')).parent)
+            except OSError:
+                pass
+
+    # Desktop & Start Menu .lnk shortcuts
+    if os.name == "nt":
+        try:
+            ps_lnk = (
+                "$sh = New-Object -ComObject WScript.Shell; "
+                "$roots = @([Environment]::GetFolderPath('Desktop'), "
+                "[Environment]::GetFolderPath('CommonDesktopDirectory'), "
+                "[Environment]::GetFolderPath('Programs'), "
+                "[Environment]::GetFolderPath('CommonPrograms')); "
+                "foreach ($r in $roots) { if ($r -and (Test-Path $r)) { "
+                "Get-ChildItem -Path $r -Filter '*antigravity*.lnk' -Recurse -ErrorAction SilentlyContinue | "
+                "ForEach-Object { try { $sh.CreateShortcut($_.FullName).TargetPath } catch {} } } }"
+            )
+            out = subprocess.check_output(
+                ["powershell", "-NoProfile", "-Command", ps_lnk],
+                text=True,
+                stderr=subprocess.DEVNULL,
+                timeout=8,
+            )
+            for line in out.splitlines():
+                line = line.strip()
+                if line:
+                    raw.append(Path(line).parent)
+        except Exception:
+            pass
+
+    seen = set()
+    unique: List[Path] = []
+    for p in raw:
+        try:
+            norm = os.path.normcase(os.path.abspath(str(p)))
+        except OSError:
+            continue
+        if norm not in seen:
+            seen.add(norm)
+            unique.append(Path(os.path.abspath(str(p))))
+    return unique
+
+
+def _get_fixed_drives() -> List[Path]:
+    if os.name != "nt":
+        return [Path("/")]
+    drives: List[Path] = []
+    try:
+        bitmask = ctypes.windll.kernel32.GetLogicalDrives()
+        for idx in range(26):
+            if bitmask & (1 << idx):
+                root = f"{chr(65 + idx)}:\\"
+                if ctypes.windll.kernel32.GetDriveTypeW(root) == 3:  # DRIVE_FIXED
+                    drives.append(Path(root))
+    except Exception:
+        drives.append(Path(os.environ.get("SystemDrive", "C:") + "\\"))
+    return drives
+
+
+def _scan_fixed_drives(max_depth: int = 6) -> List[Path]:
+    """Scan all local fixed drives for Antigravity installations, pruning heavy OS/cache folders."""
+    skip_dirs = {
+        "$recycle.bin", "system volume information", "windows", "winsxs",
+        "recovery", "$winreagent", "perflogs", "node_modules", ".git", ".hg",
+        ".svn", "__pycache__", "cache", "code cache", "gpucache", "temp", "tmp",
+        "installer", "packagedriverstore", "driverstore", "assembly",
+    }
+    found: List[Path] = []
+    seen = set()
+
+    def walk_dir(current: Path, depth: int) -> None:
+        if depth > max_depth:
+            return
+        try:
+            entries = list(os.scandir(current))
+        except OSError:
+            return
+
+        names_lc = {e.name.lower(): e for e in entries}
+        if "antigravity.exe" in names_lc and "resources" in names_lc and names_lc["resources"].is_dir():
+            cand = Path(current)
+            norm = os.path.normcase(str(cand))
+            if norm not in seen:
+                seen.add(norm)
+                found.append(cand)
+            return
+
+        if depth == max_depth:
+            return
+        for entry in entries:
+            if not entry.is_dir(follow_symlinks=False):
+                continue
+            if entry.name.lower() in skip_dirs or entry.name.startswith("$"):
+                continue
+            walk_dir(Path(entry.path), depth + 1)
+
+    for drive in _get_fixed_drives():
+        print(f"      Сканирование диска {drive} ...", flush=True)
+        walk_dir(drive, 0)
+    return found
+
+
+def cmd_search(deep: bool = False, out_file: Optional[str] = None) -> None:
+    """Search PC for Antigravity installations using system clues + reference/hash checks."""
+    print("[1/3] Проверка стандартных путей, процессов, реестра и ярлыков...")
+    candidates = _candidate_dirs_from_system()
+    verified: List[dict] = []
+    seen_norm = set()
+
+    def check_candidates(paths: List[Path]) -> None:
+        for cand in paths:
+            norm = os.path.normcase(os.path.abspath(str(cand)))
+            if norm in seen_norm:
+                continue
+            seen_norm.add(norm)
+            info = verify_antigravity_dir(cand)
+            if info is not None:
+                verified.append(info)
+
+    check_candidates(candidates)
+
+    if deep or not verified:
+        print("[2/3] Глубокий поиск по всем локальным дискам (эталонная структура + SHA-256)...")
+        check_candidates(_scan_fixed_drives())
+    else:
+        print("[2/3] Глубокое сканирование дисков не потребовалось.")
+
+    print("[3/3] Результаты проверки по эталону и хэшам:")
+    if not verified:
+        print("      [!] Подтверждённые установки Google Antigravity не найдены.")
+        raise SystemExit(1)
+
+    for idx, info in enumerate(verified, 1):
+        status = "патчен (RU)" if info["asar_patched"] else "оригинал (EN)"
+        ls_state = "RU-заголовки" if info["ls_patched"] else "EN-заголовки"
+        hash_flag = "OK" if info["asar_hashes_ok"] else "WARN"
+        print(f"\n  [{idx}] {info['path']}")
+        print(f"      Продукт:     {info['product_name']} v{info['version']} (эталон {info['layout']}, ASAR-хэши: {hash_flag})")
+        print(f"      Состояние:   app.asar = {status}; language_server = {ls_state}")
+        print(f"      EXE SHA256:  {info['exe_sha256'][:24]}...")
+        print(f"      ASAR SHA256: {info['asar_sha256'][:24]}...")
+        if info["ls_sha256"]:
+            print(f"      LS SHA256:   {info['ls_sha256'][:24]}...")
+
+    selected = verified[0]
+    if out_file:
+        if len(verified) > 1:
+            choice = input(f"\nНайдено установок: {len(verified)}. Выберите номер [1-{len(verified)}] (Enter = 1): ").strip()
+            if choice.isdigit() and 1 <= int(choice) <= len(verified):
+                selected = verified[int(choice) - 1]
+        Path(out_file).write_text(selected["path"], encoding="utf-8")
+
+
+def _get_desktop_dir() -> Path:
+    if os.name == "nt":
+        try:
+            buf = ctypes.create_unicode_buffer(260)
+            # CSIDL_DESKTOPDIRECTORY = 0x0010
+            if ctypes.windll.shell32.SHGetFolderPathW(None, 0x0010, None, 0, buf) == 0 and buf.value:
+                return Path(buf.value)
+        except Exception:
+            pass
+    return Path.home() / "Desktop"
+
+
+class _TeeStream(io.TextIOBase):
+    def __init__(self, primary, log_fp):
+        self.primary = primary
+        self.log_fp = log_fp
+
+    def write(self, s):
+        self.primary.write(s)
+        self.primary.flush()
+        self.log_fp.write(s)
+        self.log_fp.flush()
+        return len(s)
+
+    def flush(self):
+        self.primary.flush()
+        self.log_fp.flush()
+
+
+def _is_antigravity_running() -> bool:
+    if os.name != "nt":
+        return False
+    out = subprocess.check_output(
+        ["tasklist", "/FI", "IMAGENAME eq Antigravity.exe"],
+        text=True,
+        stderr=subprocess.DEVNULL,
+    )
+    return "Antigravity.exe" in out
+
+
+def _close_antigravity_gracefully(log_fn) -> None:
+    if not _is_antigravity_running():
+        log_fn("PROC", "Antigravity.exe не запущен.")
+        return
+    log_fn("PROC", "Плавное закрытие Antigravity.exe...")
+    subprocess.run(["taskkill", "/IM", "Antigravity.exe"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    for _ in range(6):
+        time.sleep(1)
+        if not _is_antigravity_running():
+            log_fn("PROC", "Antigravity.exe плавно завершён.")
+            time.sleep(1)
+            return
+    log_fn("PROC", "Таймаут плавного закрытия — принудительное завершение дерева процессов...")
+    subprocess.run(["taskkill", "/F", "/T", "/IM", "Antigravity.exe"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    for _ in range(6):
+        time.sleep(1)
+        if not _is_antigravity_running():
+            break
+    time.sleep(1)
+    log_fn("PROC", "Процессы Antigravity завершены.")
+
+
+def _force_english_baseline(log_fn) -> None:
+    """Reset any user locale override in Antigravity argv.json to English before re-patching."""
+    if os.name != "nt":
+        return
+    argv_path = Path(os.environ.get("APPDATA", "")) / "Antigravity" / "User" / "argv.json"
+    if not argv_path.is_file():
+        log_fn("LOCALE", "Пользовательский argv.json отсутствует — используется исходная английская локаль.")
+        return
+    try:
+        raw = argv_path.read_text(encoding="utf-8")
+        # Strip // comments if present before parsing
+        cleaned = "\n".join(line for line in raw.splitlines() if not line.lstrip().startswith("//"))
+        data = json.loads(cleaned)
+        if isinstance(data, dict) and data.get("locale") != "en":
+            data["locale"] = "en"
+            argv_path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+            log_fn("LOCALE", f"Сброшен параметр locale='en' в {argv_path}.")
+        else:
+            log_fn("LOCALE", "В argv.json уже установлена английская локаль.")
+    except Exception as exc:
+        log_fn("LOCALE", f"Не удалось обработать argv.json ({exc}); продолжаем.")
+
+
+def cmd_debug(install_dir: Path, ru_titles: bool = True) -> None:
+    """Reset to clean English, patch Antigravity, launch it, and stream live logs until 'stop'."""
+    debug_dir = _get_desktop_dir() / "patchdebug"
+    debug_dir.mkdir(parents=True, exist_ok=True)
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_path = debug_dir / f"patch_debug_{ts}.log"
+
+    log_fp = log_path.open("w", encoding="utf-8", buffering=1)
+    lock = threading.Lock()
+
+    def log(tag: str, msg: str) -> None:
+        stamp = datetime.now().strftime("%H:%M:%S")
+        line = f"[{stamp}] [{tag}] {msg}\n"
+        with lock:
+            sys.stdout.write(line)
+            sys.stdout.flush()
+            log_fp.write(line)
+            log_fp.flush()
+
+    tee_out = _TeeStream(sys.stdout, log_fp)
+    tee_err = _TeeStream(sys.stderr, log_fp)
+
+    try:
+        log("DEBUG", f"Лог-папка: {debug_dir}")
+        log("DEBUG", f"Лог-файл:  {log_path}")
+        log("DEBUG", f"Папка Antigravity: {install_dir}")
+
+        log("STEP 1", "Плавное закрытие перед откатом...")
+        _close_antigravity_gracefully(log)
+
+        log("STEP 2", "Откат изменений к оригиналу и принудительная установка английского...")
+        with contextlib.redirect_stdout(tee_out), contextlib.redirect_stderr(tee_err):
+            cmd_restore(install_dir)
+        _force_english_baseline(log)
+        asar_state = is_patched(install_dir / "resources" / "app.asar")
+        log("STEP 2", f"Проверка отката: app.asar_patched={asar_state}")
+
+        log("STEP 3", "Повторная проверка процессов и накатывание русского патча...")
+        _close_antigravity_gracefully(log)
+        with contextlib.redirect_stdout(tee_out), contextlib.redirect_stderr(tee_err):
+            cmd_apply(install_dir, dry_run=False, ru_titles=ru_titles)
+
+        # Snapshot current offsets of Antigravity live logs before launch
+        app_logs_dir = Path(os.environ.get("APPDATA", "")) / "Antigravity" / "logs"
+        tail_targets = {
+            "MAIN": app_logs_dir / "main.log",
+            "LS": app_logs_dir / "language_server.log",
+        }
+        offsets: Dict[str, int] = {}
+        for tag, path in tail_targets.items():
+            offsets[tag] = path.stat().st_size if path.exists() else 0
+
+        exe_path = install_dir / "Antigravity.exe"
+        if exe_path.is_file() and os.name == "nt":
+            log("LAUNCH", f"Запуск {exe_path} через проводник (независимо от окна консоли)...")
+            subprocess.Popen(["explorer.exe", str(exe_path)])
+        else:
+            log("LAUNCH", f"Файл {exe_path} не найден — переход в режим ожидания логов.")
+
+        print("\n========================================================")
+        print(f"  Живой лог пишется в: {log_path}")
+        print('  Команды: stop (остановить запись), status, open')
+        print("========================================================\n", flush=True)
+
+        stop_event = threading.Event()
+
+        def tail_worker() -> None:
+            while not stop_event.is_set():
+                for tag, path in tail_targets.items():
+                    if not path.exists():
+                        continue
+                    try:
+                        size = path.stat().st_size
+                        pos = offsets.get(tag, 0)
+                        if size < pos:
+                            pos = 0
+                        if size > pos:
+                            with path.open("r", encoding="utf-8", errors="replace") as f:
+                                f.seek(pos)
+                                chunk = f.read()
+                                offsets[tag] = f.tell()
+                            for ln in chunk.splitlines():
+                                if ln.strip():
+                                    log(tag, ln)
+                    except OSError:
+                        pass
+                stop_event.wait(0.4)
+
+        worker = threading.Thread(target=tail_worker, daemon=True)
+        worker.start()
+
+        while not stop_event.is_set():
+            try:
+                cmd_in = input("patchdebug> ").strip()
+            except (EOFError, KeyboardInterrupt):
+                cmd_in = "stop"
+            low = cmd_in.lower()
+            if low in ("stop", "стоп", "exit", "quit"):
+                log("DEBUG", "Получена команда stop — остановка записи логов...")
+                stop_event.set()
+                break
+            elif low == "status":
+                running = _is_antigravity_running()
+                patched = is_patched(install_dir / "resources" / "app.asar")
+                log("STATUS", f"Antigravity.exe running={running}, app.asar_patched={patched}")
+            elif low == "open" and os.name == "nt":
+                os.startfile(str(debug_dir))
+            elif cmd_in:
+                print('Неизвестная команда. Доступно: stop, status, open', flush=True)
+
+        worker.join(timeout=2.0)
+        log("DEBUG", f"Запись логов остановлена. Файл сохранён: {log_path}")
+    finally:
+        log_fp.close()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Russian localization patcher for Google Antigravity")
     parser.add_argument("--dir", help="Path to Antigravity install directory (containing resources/app.asar)")
@@ -772,7 +1324,15 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true", help="Test patching into _dry_run_app.asar without modifying installation")
     parser.add_argument("--no-ru-titles", action="store_true", help="Skip patching language_server.exe for Russian conversation titles")
     parser.add_argument("--print-dir", action="store_true", help="Print resolved Antigravity install directory and exit")
+    parser.add_argument("--search", action="store_true", help="Search PC for Antigravity installations (fingerprints + SHA-256 hashes)")
+    parser.add_argument("--search-deep", action="store_true", help="Force deep scan across all fixed local drives during --search")
+    parser.add_argument("--search-out", help="Write chosen installation path from --search to this file")
+    parser.add_argument("--debug", action="store_true", help="Debug mode: restore EN, close, patch RU, and stream live logs to Desktop\\patchdebug")
     args = parser.parse_args()
+
+    if args.search or args.search_deep:
+        cmd_search(deep=args.search_deep, out_file=args.search_out)
+        return
 
     try:
         install_dir = resolve_install_dir(args.dir)
@@ -781,6 +1341,10 @@ def main() -> None:
         raise SystemExit(1) from exc
     if args.print_dir:
         print(str(install_dir))
+        return
+
+    if args.debug:
+        cmd_debug(install_dir, ru_titles=not args.no_ru_titles)
         return
 
     if not (args.apply or args.restore or args.dry_run):
