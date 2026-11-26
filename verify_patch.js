@@ -100,6 +100,16 @@ assert.strictEqual(i18n.translateUiText("Build me a web app"), "Создай в�
 assert.strictEqual(i18n.translateUiText("Add a Gemini feature to my app"), "Добавь функцию Gemini в моё приложение");
 assert.strictEqual(i18n.translateUiText("Bring over my setup from other Agentic Developer Tools"), "Перенеси настройки из других ИИ-инструментов разработки");
 assert.strictEqual(i18n.translateUiText("Software Engineering"), "Разработка ПО");
+assert.strictEqual(i18n.translateUiText("View Usage"), "Посмотреть лимиты");
+assert.strictEqual(i18n.translateUiText("Usage"), "Лимиты");
+assert.strictEqual(i18n.translateUiText("Leaving Soon"), "Скоро исчезнет");
+assert.strictEqual(i18n.translateUiText("Paid Pro"), "Тариф Pro");
+assert.strictEqual(i18n.translateUiText("5h limit"), "Лимит на 5 ч");
+assert.strictEqual(i18n.translateUiText("Extra High"), "Максимальная");
+assert.strictEqual(i18n.translateUiText("57% left"), "Осталось 57%");
+assert.strictEqual(i18n.translateUiText("% left"), "% осталось");
+assert.strictEqual(i18n.translateUiText("Resets in 6d 13h"), "Сброс через 6 д 13 ч");
+assert.strictEqual(i18n.translateUiText("4h 25m"), "4 ч 25 мин");
 assert.strictEqual(i18n.translateUiText("Review"), "Обзор");
 assert.strictEqual(i18n.translateUiText("  Settings  "), "  Настройки  ");
 assert.strictEqual(i18n.translateUiText("just now"), "только что");

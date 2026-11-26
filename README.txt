@@ -1,6 +1,6 @@
 ================================================================
-  Русификатор Google Antigravity v1.1.0 (Windows)
-  Google Antigravity Russian Localization Patcher v1.1.0
+  Русификатор Google Antigravity v2.0.0 (Windows)
+  Google Antigravity Russian Localization Patcher v2.0.0
 ================================================================
 
 ----------------------------------------------------------------

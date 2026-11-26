@@ -41,18 +41,20 @@ if not defined INSTALL_DIR (
     exit /b 1
 )
 
+set "AUTO_RELAUNCH=0"
 tasklist /FI "IMAGENAME eq Antigravity.exe" 2>nul | find /I "Antigravity.exe" >nul
 if !errorlevel!==0 goto :prompt_close
 goto :run_patch
 
 :prompt_close
 echo [!] Приложение Antigravity сейчас запущено.
-echo     Чтобы пропатчить resources\app.asar, приложение нужно закрыть.
+echo     Чтобы установить патч, приложение нужно закрыть.
 echo     ВАЖНО: сохраните все несохранённые данные перед продолжением!
 echo.
-set "CLOSE_AGY=Y"
-set /p "CLOSE_AGY=Закрыть Antigravity сейчас и установить патч? [Y/n]: "
-for %%K in (n no н Н нет Нет НЕТ т Т) do if /I "!CLOSE_AGY!"=="%%K" goto :need_manual_close
+set "AUTO_APPLY=Y"
+set /p "AUTO_APPLY=Закрыть Antigravity, применить патч и перезапустить его? [Y/n]: "
+for %%K in (n no н Н нет Нет НЕТ т Т) do if /I "!AUTO_APPLY!"=="%%K" goto :need_manual_close
+set "AUTO_RELAUNCH=1"
 
 echo Плавное закрытие Antigravity...
 taskkill /IM Antigravity.exe >nul 2>&1
@@ -87,9 +89,13 @@ if !errorlevel! neq 0 (
 
 echo.
 echo [OK] Операция завершена.
+if "!AUTO_RELAUNCH!"=="1" goto :auto_launch
+
 set "LAUNCH_AGY=Y"
 set /p "LAUNCH_AGY=Запустить Antigravity сейчас? [Y/n]: "
 for %%K in (n no н Н нет Нет НЕТ т Т) do if /I "!LAUNCH_AGY!"=="%%K" goto :done_no_launch
+
+:auto_launch
 if exist "!INSTALL_DIR!\Antigravity.exe" (
     echo Запуск Antigravity...
     explorer.exe "!INSTALL_DIR!\Antigravity.exe"
