@@ -1,56 +1,58 @@
 ================================================================
-  Google Antigravity - Russian Localization Patch (Windows)
+  Русификатор Google Antigravity (Windows)
 ================================================================
 
-Unofficial Russian localization patch for Google Antigravity.
-Patches only resources\app.asar (with automatic backup to
-resources\app.asar.bak) without modifying signed .exe binaries.
+Патч переводит интерфейс десктопного приложения Google Antigravity
+на русский язык (меню, трей, диалоги, настройки, боковая панель,
+стартовые подсказки, встроенный браузер, терминалы, плагины, MCP,
+автоматизации и др.), а также переключает автогенерацию названий
+новых чатов на русский язык.
+
+Скрипт обновляет ресурсы оболочки (resources\app.asar) и промпт
+генератора заголовков (resources\bin\language_server.exe) с
+автоматическим созданием резервных копий (.bak).
+Чтобы пропустить патч названий чатов: python patch_antigravity_ru.py --apply --no-ru-titles
 
 ----------------------------------------------------------------
-  Requirements
+  Требования
 ----------------------------------------------------------------
 - Windows 10 / 11
-- Google Antigravity desktop app
-  (default: %LOCALAPPDATA%\Programs\antigravity)
-- Python 3.8+ from python.org (added to PATH)
+- Установленный Google Antigravity (стандартный путь:
+  %LOCALAPPDATA%\Programs\antigravity)
+- Python 3.8+ (с python.org, добавленный в PATH)
 
 ----------------------------------------------------------------
-  Quick Start
+  Быстрая установка
 ----------------------------------------------------------------
-1. Extract or clone all files into a folder.
-2. Save any unsaved work in Antigravity.
-3. Run apply_patch.bat
-   (or for a custom path: apply_patch.bat --dir "C:\Path\to\antigravity")
-4. Confirm closing Antigravity and launch it when done.
+1. Распакуйте все файлы архива в любую папку.
+2. Сохраните открытые файлы/чаты и закройте Antigravity
+   (или оставьте открытым — скрипт сам предложит закрыть его).
+3. Запустите apply_patch.bat.
+   Если Antigravity установлен в нестандартную папку:
+   apply_patch.bat --dir "C:\Путь\к\antigravity"
+4. Дождитесь завершения и запустите Antigravity.
 
 ----------------------------------------------------------------
-  Manual CLI Usage
+  Откат и устранение неполадок
 ----------------------------------------------------------------
-Close Antigravity completely (including the system tray icon):
-  python patch_antigravity_ru.py --apply
-
-Custom installation path:
-  python patch_antigravity_ru.py --apply --dir "C:\Path\to\antigravity"
-
-----------------------------------------------------------------
-  Rollback & Troubleshooting
-----------------------------------------------------------------
-- To restore the original English UI, run restore_patch.bat or:
+- Если приложение не запускается после патча (например, в будущей
+  версии Antigravity включат проверку целостности ASAR),
+  запустите restore_patch.bat или выполните:
   python patch_antigravity_ru.py --restore
-- If Antigravity fails to launch after patching (for example, if a
-  future version enables ASAR integrity validation), run
-  restore_patch.bat to revert from resources\app.asar.bak.
-- After an official Antigravity update, simply re-run apply_patch.bat.
-- Running restore_patch.bat on an unpatched app.asar safely skips
-  rollback so a newer version is never overwritten by an old backup.
+- Если Antigravity обновился и интерфейс снова стал английским,
+  просто заново запустите apply_patch.bat — патч сохранит бэкап
+  новой версии и применит перевод повторно.
+- Если запустить restore_patch.bat после обновления на
+  непропатченном app.asar, откат безопасно пропустится и не
+  заменит новую версию старым бэкапом.
 
 ----------------------------------------------------------------
-  Files
+  Состав архива
 ----------------------------------------------------------------
-- apply_patch.bat         : Windows installer script
-- restore_patch.bat       : Rollback script
-- patch_antigravity_ru.py : Python ASAR patcher & integrity updater
-- ru_i18n.js              : Russian dictionary, regex rules, plurals
-- ru_dom_translator.js    : Cached DOM MutationObserver translator
-- README.txt              : This file
-- README.md               : GitHub documentation
+- apply_patch.bat         — автоустановка патча
+- restore_patch.bat       — откат к оригиналу
+- patch_antigravity_ru.py — скрипт патча (чтение/сборка ASAR)
+- ru_i18n.js              — словарь и правила склонения/шаблонов
+- ru_dom_translator.js    — DOM-переводчик веб-интерфейса (с кэшем)
+- README.txt              — эта инструкция
+- README.md               — описание для GitHub

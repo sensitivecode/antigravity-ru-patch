@@ -9,6 +9,8 @@ Patches `resources/app.asar` cleanly (without modifying signed binaries):
 - Injects a sandbox-safe DOM localization observer (`ru_i18n` + `ru_dom_translator`)
   into `dist/preload.js` to translate the React Hub UI in real time while preserving
   Material Symbols icons, code editors, terminals, math, and AI markdown prose.
+- Optionally updates the conversation title prompt in `resources/bin/language_server.exe`
+  (exact 110-byte in-place replacement, with `.bak` backup) so generated chat titles are in Russian.
 """
 from __future__ import annotations
 
@@ -27,6 +29,12 @@ from typing import Dict, List, Tuple
 PATCH_DIR = Path(__file__).resolve().parent
 BLOCK_SIZE = 4 * 1024 * 1024  # 4 MiB, standard ASAR integrity block size
 ELECTRON_FUSE_SENTINEL = b"dL7pKGdnNz796PbbjQWNKmHXBZaB9tsX"
+LS_TITLE_PROMPT_OLD = (
+    b"Respond with ONLY a short conversation title (3-5 words, title-cased, no prefix) describing the USER's intent."
+)
+LS_TITLE_PROMPT_NEW = (
+    b"Respond ONLY in Russian with a short Russian title (3-5 words, no prefix) describing the USER's exact request."
+)
 
 DEFAULT_INSTALL_DIRS = [
     Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "antigravity",
@@ -547,7 +555,94 @@ def resolve_install_dir(explicit: str | None) -> Path:
     )
 
 
-def cmd_apply(install_dir: Path, dry_run: bool = False) -> None:
+def patch_language_server_titles(install_dir: Path, dry_run: bool = False) -> str:
+    """Switch conversation title generation in language_server.exe to Russian (exact byte-length replacement)."""
+    assert len(LS_TITLE_PROMPT_OLD) == len(LS_TITLE_PROMPT_NEW) == 110
+    ls_path = install_dir / "resources" / "bin" / "language_server.exe"
+    bak_path = install_dir / "resources" / "bin" / "language_server.exe.bak"
+    if not ls_path.exists():
+        print(f"      [warn] {ls_path} not found; skipping Russian chat title patch.")
+        return "missing"
+
+    data = ls_path.read_bytes()
+    old_cnt = data.count(LS_TITLE_PROMPT_OLD)
+    new_cnt = data.count(LS_TITLE_PROMPT_NEW)
+
+    if new_cnt == 1 and old_cnt == 0:
+        print("      language_server.exe already patched for Russian chat titles.")
+        return "already-patched"
+
+    if old_cnt != 1 or new_cnt != 0:
+        print(
+            f"      [warn] language_server.exe title prompt mismatch "
+            f"(old={old_cnt}, new={new_cnt}); skipping."
+        )
+        return "skipped"
+
+    if dry_run:
+        print("      [dry-run] language_server.exe title prompt found (110 bytes); exact-length Russian patch ready.")
+        return "dry-run-ready"
+
+    print(f"      Creating language_server backup: {bak_path}")
+    shutil.copy2(ls_path, bak_path)
+
+    patched = data.replace(LS_TITLE_PROMPT_OLD, LS_TITLE_PROMPT_NEW, 1)
+    assert len(patched) == len(data)
+    assert patched.count(LS_TITLE_PROMPT_NEW) == 1
+
+    tmp_path = ls_path.with_suffix(".exe.tmp")
+    tmp_path.write_bytes(patched)
+    last_exc = None
+    for _ in range(10):
+        try:
+            os.replace(tmp_path, ls_path)
+            last_exc = None
+            break
+        except PermissionError as exc:
+            last_exc = exc
+            time.sleep(0.5)
+    if last_exc is not None:
+        try:
+            tmp_path.unlink(missing_ok=True)
+        except OSError:
+            pass
+        print(
+            "\n[ERROR] Cannot overwrite language_server.exe because Antigravity is still running.\n"
+            "Please close Antigravity completely (including the tray icon) and re-run this patch.",
+            file=sys.stderr,
+        )
+        raise SystemExit(2) from last_exc
+
+    print("      Updated language_server.exe for Russian conversation titles.")
+    return "patched"
+
+
+def restore_language_server_titles(install_dir: Path) -> None:
+    """Restore original language_server.exe if patched by this tool."""
+    ls_path = install_dir / "resources" / "bin" / "language_server.exe"
+    bak_path = install_dir / "resources" / "bin" / "language_server.exe.bak"
+    if not ls_path.exists():
+        return
+    data = ls_path.read_bytes()
+    if LS_TITLE_PROMPT_NEW not in data:
+        print("language_server.exe is not patched — nothing to restore.")
+        return
+    if not bak_path.exists():
+        print(f"No backup found at {bak_path}. Cannot restore language_server.exe.")
+        return
+    try:
+        shutil.copy2(bak_path, ls_path)
+    except PermissionError as exc:
+        print(
+            "\n[ERROR] Cannot restore language_server.exe because Antigravity is still running.\n"
+            "Please close Antigravity completely (including the tray icon) and re-run.",
+            file=sys.stderr,
+        )
+        raise SystemExit(2) from exc
+    print(f"Restored original language_server.exe from {bak_path}.")
+
+
+def cmd_apply(install_dir: Path, dry_run: bool = False, ru_titles: bool = True) -> None:
     asar_path = install_dir / "resources" / "app.asar"
     bak_path = install_dir / "resources" / "app.asar.bak"
 
@@ -563,7 +658,7 @@ def cmd_apply(install_dir: Path, dry_run: bool = False) -> None:
     already_patched = is_patched(asar_path)
 
     if not already_patched:
-        print(f"[1/4] Creating pristine backup: {bak_path}")
+        print(f"[1/5] Creating pristine backup: {bak_path}")
         if not dry_run:
             shutil.copy2(asar_path, bak_path)
         source_header, source_files = read_asar(asar_path)
@@ -572,10 +667,10 @@ def cmd_apply(install_dir: Path, dry_run: bool = False) -> None:
             raise RuntimeError(
                 f"{asar_path} is already patched, but backup {bak_path} is missing. Cannot cleanly repatch."
             )
-        print(f"[1/4] Reading pristine source from backup: {bak_path}")
+        print(f"[1/5] Reading pristine source from backup: {bak_path}")
         source_header, source_files = read_asar(bak_path)
 
-    print("[2/4] Patching Electron shell & injecting Russian Web UI translator...")
+    print("[2/5] Patching Electron shell & injecting Russian Web UI translator...")
     stats = patch_electron_files(source_files, ru_i18n_src, ru_dom_src)
 
     insert_file_node(source_header, "dist/ru_i18n.js", len(source_files["dist/ru_i18n.js"]), source_files["dist/ru_i18n.js"])
@@ -587,15 +682,18 @@ def cmd_apply(install_dir: Path, dry_run: bool = False) -> None:
 
     if dry_run:
         test_out = PATCH_DIR / "_dry_run_app.asar"
-        print(f"[3/4] Writing dry-run ASAR to {test_out}...")
+        print(f"[3/5] Writing dry-run ASAR to {test_out}...")
         write_asar(test_out, source_header, source_files)
         _, f_verify = read_asar(test_out)
         assert "dist/ru_i18n.js" in f_verify
         assert len(f_verify) == len(source_files)
-        print(f"[4/4] Verified dry-run ASAR ({test_out.stat().st_size} bytes, {len(f_verify)} packed files).")
+        print(f"[4/5] Verified dry-run ASAR ({test_out.stat().st_size} bytes, {len(f_verify)} packed files).")
+        if ru_titles:
+            print("[5/5] Checking language_server.exe Russian chat title patch...")
+            patch_language_server_titles(install_dir, dry_run=True)
         return
 
-    print(f"[3/4] Writing patched archive to {asar_path}...")
+    print(f"[3/5] Writing patched archive to {asar_path}...")
     last_exc = None
     for _ in range(10):
         try:
@@ -613,9 +711,16 @@ def cmd_apply(install_dir: Path, dry_run: bool = False) -> None:
         )
         raise SystemExit(2) from last_exc
 
-    print("[4/4] Verifying written app.asar...")
+    print("[4/5] Verifying written app.asar...")
     _, f_verify = read_asar(asar_path)
     assert "dist/ru_i18n.js" in f_verify
+
+    if ru_titles:
+        print("[5/5] Enabling Russian chat title generation in language_server.exe...")
+        patch_language_server_titles(install_dir, dry_run=False)
+    else:
+        print("[5/5] Skipped Russian chat title generation (--no-ru-titles).")
+
     if stats.missed == 0:
         print(f"Done! Antigravity at {install_dir} has been localized to Russian.")
     else:
@@ -627,28 +732,30 @@ def cmd_restore(install_dir: Path) -> None:
     bak_path = install_dir / "resources" / "app.asar.bak"
     if not is_patched(asar_path):
         print("app.asar is not patched (possibly updated by Antigravity) — nothing to restore.")
-        return
-    if not bak_path.exists():
+    elif not bak_path.exists():
         print(f"No backup found at {bak_path}. Nothing to restore.")
-        return
-    try:
-        shutil.copy2(bak_path, asar_path)
-    except PermissionError as exc:
-        print(
-            "\n[ERROR] Cannot restore app.asar because Antigravity is still running.\n"
-            "Please close Antigravity completely (including the tray icon) and re-run.",
-            file=sys.stderr,
-        )
-        raise SystemExit(2) from exc
-    print(f"Restored original app.asar from {bak_path}.")
+    else:
+        try:
+            shutil.copy2(bak_path, asar_path)
+        except PermissionError as exc:
+            print(
+                "\n[ERROR] Cannot restore app.asar because Antigravity is still running.\n"
+                "Please close Antigravity completely (including the tray icon) and re-run.",
+                file=sys.stderr,
+            )
+            raise SystemExit(2) from exc
+        print(f"Restored original app.asar from {bak_path}.")
+
+    restore_language_server_titles(install_dir)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Russian localization patcher for Google Antigravity")
     parser.add_argument("--dir", help="Path to Antigravity install directory (containing resources/app.asar)")
     parser.add_argument("--apply", action="store_true", help="Apply Russian translation patch")
-    parser.add_argument("--restore", action="store_true", help="Restore original app.asar from backup")
+    parser.add_argument("--restore", action="store_true", help="Restore original app.asar and language_server.exe from backup")
     parser.add_argument("--dry-run", action="store_true", help="Test patching into _dry_run_app.asar without modifying installation")
+    parser.add_argument("--no-ru-titles", action="store_true", help="Skip patching language_server.exe for Russian conversation titles")
     parser.add_argument("--print-dir", action="store_true", help="Print resolved Antigravity install directory and exit")
     args = parser.parse_args()
 
@@ -664,7 +771,7 @@ def main() -> None:
     if args.restore:
         cmd_restore(install_dir)
     else:
-        cmd_apply(install_dir, dry_run=args.dry_run)
+        cmd_apply(install_dir, dry_run=args.dry_run, ru_titles=not args.no_ru_titles)
 
 
 if __name__ == "__main__":
