@@ -35,7 +35,7 @@ def main() -> None:
     py_script = str(REPO_DIR / "patch_antigravity_ru.py")
 
     print("=== 1. Batch scripts: --help, spaces + (x86) + Cyrillic --dir, [Y/n] decline ===")
-    for bat_name in ("apply_patch.bat", "apply_patchSEARCHER.bat", "patch_debug.bat", "restore_patch.bat"):
+    for bat_name in ("apply_patch.bat", "apply_patchSEARCHER.bat", "patch_debug.bat", "redo_patch.bat", "restore_patch.bat"):
         res_h = subprocess.run(
             ["cmd.exe", "/c", "call", str(REPO_DIR / bat_name), "--help"],
             input=b"\r\n",
@@ -60,7 +60,15 @@ def main() -> None:
                 )
                 txt = r.stdout.decode("utf-8", errors="replace")
                 assert "Закройте Antigravity вручную" in txt and r.returncode == 1
-            print("[PASS] apply_patch.bat with spaces + (x86) + Cyrillic path & 7 decline inputs passed.")
+            for decline in ("n", "н", "т"):
+                rr = subprocess.run(
+                    ["cmd.exe", "/c", "call", str(REPO_DIR / "redo_patch.bat"), "--dir", str(spaced_dir)],
+                    input=(decline + "\r\n\r\n").encode("utf-8"),
+                    capture_output=True,
+                )
+                txt_r = rr.stdout.decode("utf-8", errors="replace")
+                assert "Закройте Antigravity вручную" in txt_r and rr.returncode == 1
+            print("[PASS] apply_patch.bat & redo_patch.bat with spaces + (x86) + Cyrillic path & declines passed.")
 
         print("=== 2. CLI: --dry-run, --apply, re-apply, --restore, --no-ru-titles, bad --dir ===")
         # Remove dummy Antigravity.exe not needed by CLI tests

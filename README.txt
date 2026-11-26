@@ -28,7 +28,8 @@
 - apply_patchSEARCHER.bat — нестандартная папка на ПК (поиск по эталону +
                             подтверждение [Y/n] или выбор из списка)
 - patch_debug.bat         — диагностика, сброс и живой лог в Desktop\patchdebug
-- restore_patch.bat       — откат к оригинальным .bak-файлам
+- redo_patch.bat          — быстрый откат на английский в 1 вопрос (+ перезапуск)
+- restore_patch.bat       — откат к оригинальным .bak-файлам (в консоли)
 
 Если русификатор слетел после обновления Antigravity — закройте
 приложение и повторно запустите apply_patch.bat (или apply_patchSEARCHER.bat).
@@ -70,7 +71,8 @@
 - apply_patch.bat         — установка (стандартный путь)
 - apply_patchSEARCHER.bat — поиск нестандартной папки + установка
 - patch_debug.bat         — диагностика и живой лог (Desktop\patchdebug)
-- restore_patch.bat       — откат к оригиналу
+- redo_patch.bat          — быстрый откат на английский (в 1 вопрос)
+- restore_patch.bat       — откат к оригиналу (в консоли)
 - patch_antigravity_ru.py — основной скрипт патча (ASAR, поиск, дебаг)
 - ru_i18n.js              — словарь и правила склонения/шаблонов
 - ru_dom_translator.js    — DOM-переводчик веб-интерфейса (с кэшем)

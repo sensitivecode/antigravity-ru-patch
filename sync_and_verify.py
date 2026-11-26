@@ -16,6 +16,7 @@ DIST_FILES = [
     "apply_patch.bat",
     "apply_patchSEARCHER.bat",
     "patch_debug.bat",
+    "redo_patch.bat",
     "restore_patch.bat",
     "README.md",
     "README.txt",
