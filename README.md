@@ -1,5 +1,7 @@
 # Antigravity Russian Localization Patch (`antigravity-ru-patch`)
 
+**Language:** English | [Русский](README.ru.md)
+
 Unofficial Russian localization patch for the **Google Antigravity** desktop application on Windows.
 
 It translates both the **Electron desktop shell** (menus, tray, dialogs, auto-updater, setup wizard, SSH/WSL prompts) and the **Hub Web UI** (sidebar, chats, projects, workspaces, settings, permissions, plugins, MCP servers, hooks, automations, built-in browser, terminals, artifact/PDF/diff viewers, relative timestamps, and tool statuses) without modifying signed `.exe` binaries.
