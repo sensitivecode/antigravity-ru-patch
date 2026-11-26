@@ -23,18 +23,7 @@
 
 ## Как это работает
 
-```mermaid
-flowchart TD
-    A["apply_patch.bat / apply_patchSEARCHER.bat"] --> B["patch_antigravity_ru.py --apply"]
-    B --> C["resources/app.asar (+ .bak)"]
-    B --> D["resources/bin/language_server.exe (+ .bak)"]
-    C --> C1["--lang=ru для Chromium (диалоги, Intl)"]
-    C --> C2["Перевод Electron-меню, трея и контекстных меню"]
-    C --> C3["ru_i18n.js + ru_dom_translator.js в preload.js"]
-    D --> D1["Точечная замена 110 байт в промпте заголовков"]
-    C1 & C2 & C3 --> E["Русифицированный UI (2218+ фраз, 109 плагинов)"]
-    D1 --> F["Русские названия новых чатов"]
-```
+![Схема работы патча](docs/images/architecture.png)
 
 ---
 
