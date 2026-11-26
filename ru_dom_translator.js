@@ -45,8 +45,6 @@
     ".material-symbols-sharp",
     ".material-icons",
     ".codicon",
-    '[class*="material-symbols"]',
-    '[class*="material-icons"]',
     ".monaco-editor",
     ".xterm",
     ".cm-editor",
@@ -155,16 +153,20 @@
     const base = root.nodeType === 9 ? root.documentElement : root;
     if (!base) return;
     if (base.nodeType === 1) {
-      translateElementAttributes(base);
+      try {
+        translateElementAttributes(base);
+      } catch {}
     }
     const walker = doc.createTreeWalker(base, 5 /* SHOW_ELEMENT | SHOW_TEXT */);
     let cur = walker.nextNode();
     while (cur) {
-      if (cur.nodeType === 3) {
-        translateTextNode(cur);
-      } else if (cur.nodeType === 1) {
-        translateElementAttributes(cur);
-      }
+      try {
+        if (cur.nodeType === 3) {
+          translateTextNode(cur);
+        } else if (cur.nodeType === 1) {
+          translateElementAttributes(cur);
+        }
+      } catch {}
       cur = walker.nextNode();
     }
   }

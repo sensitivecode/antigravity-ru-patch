@@ -160,9 +160,10 @@ function makeEl(tag, cls = "", text = "", parent = null) {
     closest(sel) {
       let cur = this;
       while (cur) {
-        if (sel.includes("material-symbols") && (cur.className || "").includes("material-symbols")) return cur;
-        if (sel.includes(".monaco-editor") && (cur.className || "").includes("monaco-editor")) return cur;
-        if (sel.includes(".prose") && (cur.className || "").includes("prose")) return cur;
+        const cls = String(cur.className || "").trim().split(/\s+/);
+        if (sel.includes(".material-symbols-outlined") && cls.includes("material-symbols-outlined")) return cur;
+        if (sel.includes(".monaco-editor") && cls.includes("monaco-editor")) return cur;
+        if (sel.includes(".prose") && cls.includes("prose")) return cur;
         if (sel.includes("button") && cur.tagName === "BUTTON") return cur;
         cur = cur.parentElement;
       }
@@ -184,8 +185,10 @@ const input = makeEl("input", "", "", rootEl);
 input.setAttribute("placeholder", "Search Conversations");
 const prose = makeEl("div", "prose", "Settings", rootEl);
 const proseBtn = makeEl("button", "", "Copy", prose);
+const twMenu = makeEl("div", "[&:has(>.material-symbols-outlined:first-child)]:pl-1.5", "", rootEl);
+const twItem = makeEl("span", "", "View Usage", twMenu);
 
-const allWalkNodes = [rootEl, btn, icon, input, prose, proseBtn, ...nodes];
+const allWalkNodes = [rootEl, btn, icon, input, prose, proseBtn, twMenu, twItem, ...nodes];
 let walkIdx = -1;
 const mockGlobal = {
   location: { protocol: "https:" },
@@ -224,5 +227,6 @@ assert.strictEqual(nodes[1].nodeValue, "Close");
 assert.strictEqual(input.getAttribute("placeholder"), "Поиск по чатам");
 assert.strictEqual(nodes[2].nodeValue, "Settings");
 assert.strictEqual(nodes[3].nodeValue, "Копировать");
+assert.strictEqual(nodes[4].nodeValue, "Посмотреть лимиты");
 
 console.log("All ASAR, i18n, preload sandbox, and DOM translator tests passed!");
