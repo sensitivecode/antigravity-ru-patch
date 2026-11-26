@@ -18,6 +18,8 @@
 | Главный экран и подсказки | Настройки и разрешения |
 | :---: | :---: |
 | ![Главный экран Antigravity](docs/images/ui-welcome.png) | ![Настройки Antigravity](docs/images/ui-settings.png) |
+| **Маркетплейс плагинов и Google Workspace** | **Инструменты разработчика (109+ плагинов)** |
+| ![Маркетплейс плагинов](docs/images/ui-marketplace-1.jpg) | ![Каталог инструментов](docs/images/ui-marketplace-2.jpg) |
 
 ---
 
