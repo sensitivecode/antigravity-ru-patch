@@ -84,7 +84,12 @@ set "LAUNCH_AGY=Y"
 set /p "LAUNCH_AGY=Запустить Antigravity сейчас? [Y/n]: "
 if /I "!LAUNCH_AGY!"=="n" goto :done_no_launch
 if /I "!LAUNCH_AGY!"=="н" goto :done_no_launch
-if exist "!INSTALL_DIR!\Antigravity.exe" start "" "!INSTALL_DIR!\Antigravity.exe"
+if exist "!INSTALL_DIR!\Antigravity.exe" (
+    echo Запуск Antigravity...
+    explorer.exe "!INSTALL_DIR!\Antigravity.exe"
+)
+timeout /t 1 /nobreak >nul
+exit /b 0
 
 :done_no_launch
 pause
