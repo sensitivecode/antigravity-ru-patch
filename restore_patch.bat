@@ -24,6 +24,9 @@ if not defined PY_CMD (
     exit /b 1
 )
 
+if "%~1"=="--help" goto :show_help
+if "%~1"=="-h" goto :show_help
+
 tasklist /FI "IMAGENAME eq Antigravity.exe" 2>nul | find /I "Antigravity.exe" >nul
 if !errorlevel!==0 goto :prompt_close
 goto :run_restore
@@ -34,8 +37,7 @@ echo     ВАЖНО: сохраните все несохранённые дан
 echo.
 set "CLOSE_AGY=Y"
 set /p "CLOSE_AGY=Закрыть Antigravity и восстановить оригинал? [Y/n]: "
-if /I "!CLOSE_AGY!"=="n" goto :need_manual_close
-if /I "!CLOSE_AGY!"=="н" goto :need_manual_close
+for %%K in (n no н Н нет Нет НЕТ т Т) do if /I "!CLOSE_AGY!"=="%%K" goto :need_manual_close
 
 echo Плавное закрытие Antigravity...
 taskkill /IM Antigravity.exe >nul 2>&1
@@ -77,3 +79,8 @@ echo.
 echo Закройте Antigravity вручную ^(включая значок в трее^) и запустите restore_patch.bat снова.
 pause
 exit /b 1
+
+:show_help
+!PY_CMD! "%~dp0patch_antigravity_ru.py" --help
+pause
+exit /b 0

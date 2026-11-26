@@ -590,28 +590,71 @@ def patch_language_server_titles(install_dir: Path, dry_run: bool = False) -> st
     assert len(patched) == len(data)
     assert patched.count(LS_TITLE_PROMPT_NEW) == 1
 
-    tmp_path = ls_path.with_suffix(".exe.tmp")
-    tmp_path.write_bytes(patched)
+def _retry_on_lock(action, target_label: str, action_word: str = "overwrite", cleanup=None) -> None:
+    """Retry a file replacement/copy when Antigravity processes are still releasing locks."""
     last_exc = None
     for _ in range(10):
         try:
-            os.replace(tmp_path, ls_path)
-            last_exc = None
-            break
+            action()
+            return
         except PermissionError as exc:
             last_exc = exc
             time.sleep(0.5)
-    if last_exc is not None:
+    if cleanup is not None:
         try:
-            tmp_path.unlink(missing_ok=True)
+            cleanup()
         except OSError:
             pass
+    print(
+        f"\n[ERROR] Cannot {action_word} {target_label} because Antigravity is still running.\n"
+        "Please close Antigravity completely (including the tray icon) and re-run.",
+        file=sys.stderr,
+    )
+    raise SystemExit(2) from last_exc
+
+
+def patch_language_server_titles(install_dir: Path, dry_run: bool = False) -> str:
+    """Switch conversation title generation in language_server.exe to Russian (exact byte-length replacement)."""
+    assert len(LS_TITLE_PROMPT_OLD) == len(LS_TITLE_PROMPT_NEW) == 110
+    ls_path = install_dir / "resources" / "bin" / "language_server.exe"
+    bak_path = install_dir / "resources" / "bin" / "language_server.exe.bak"
+    if not ls_path.exists():
+        print(f"      [warn] {ls_path} not found; skipping Russian chat title patch.")
+        return "missing"
+
+    data = ls_path.read_bytes()
+    old_cnt = data.count(LS_TITLE_PROMPT_OLD)
+    new_cnt = data.count(LS_TITLE_PROMPT_NEW)
+
+    if new_cnt == 1 and old_cnt == 0:
+        print("      language_server.exe already patched for Russian chat titles.")
+        return "already-patched"
+
+    if old_cnt != 1 or new_cnt != 0:
         print(
-            "\n[ERROR] Cannot overwrite language_server.exe because Antigravity is still running.\n"
-            "Please close Antigravity completely (including the tray icon) and re-run this patch.",
-            file=sys.stderr,
+            f"      [warn] language_server.exe title prompt mismatch "
+            f"(old={old_cnt}, new={new_cnt}); skipping."
         )
-        raise SystemExit(2) from last_exc
+        return "skipped"
+
+    if dry_run:
+        print("      [dry-run] language_server.exe title prompt found (110 bytes); exact-length Russian patch ready.")
+        return "dry-run-ready"
+
+    print(f"      Creating language_server backup: {bak_path}")
+    shutil.copy2(ls_path, bak_path)
+
+    patched = data.replace(LS_TITLE_PROMPT_OLD, LS_TITLE_PROMPT_NEW, 1)
+    assert len(patched) == len(data)
+    assert patched.count(LS_TITLE_PROMPT_NEW) == 1
+
+    tmp_path = ls_path.with_suffix(".exe.tmp")
+    tmp_path.write_bytes(patched)
+    _retry_on_lock(
+        lambda: os.replace(tmp_path, ls_path),
+        "language_server.exe",
+        cleanup=lambda: tmp_path.unlink(missing_ok=True),
+    )
 
     print("      Updated language_server.exe for Russian conversation titles.")
     return "patched"
@@ -630,15 +673,7 @@ def restore_language_server_titles(install_dir: Path) -> None:
     if not bak_path.exists():
         print(f"No backup found at {bak_path}. Cannot restore language_server.exe.")
         return
-    try:
-        shutil.copy2(bak_path, ls_path)
-    except PermissionError as exc:
-        print(
-            "\n[ERROR] Cannot restore language_server.exe because Antigravity is still running.\n"
-            "Please close Antigravity completely (including the tray icon) and re-run.",
-            file=sys.stderr,
-        )
-        raise SystemExit(2) from exc
+    _retry_on_lock(lambda: shutil.copy2(bak_path, ls_path), "language_server.exe", action_word="restore")
     print(f"Restored original language_server.exe from {bak_path}.")
 
 
@@ -664,9 +699,12 @@ def cmd_apply(install_dir: Path, dry_run: bool = False, ru_titles: bool = True) 
         source_header, source_files = read_asar(asar_path)
     else:
         if not bak_path.exists():
-            raise RuntimeError(
-                f"{asar_path} is already patched, but backup {bak_path} is missing. Cannot cleanly repatch."
+            print(
+                f"\n[ERROR] {asar_path} is already patched, but backup {bak_path} is missing.\n"
+                "Cannot cleanly re-patch without the original app.asar.bak backup.",
+                file=sys.stderr,
             )
+            raise SystemExit(2)
         print(f"[1/5] Reading pristine source from backup: {bak_path}")
         source_header, source_files = read_asar(bak_path)
 
@@ -694,22 +732,7 @@ def cmd_apply(install_dir: Path, dry_run: bool = False, ru_titles: bool = True) 
         return
 
     print(f"[3/5] Writing patched archive to {asar_path}...")
-    last_exc = None
-    for _ in range(10):
-        try:
-            write_asar(asar_path, source_header, source_files)
-            last_exc = None
-            break
-        except PermissionError as exc:
-            last_exc = exc
-            time.sleep(0.5)
-    if last_exc is not None:
-        print(
-            "\n[ERROR] Cannot overwrite app.asar because Antigravity is still running.\n"
-            "Please close Antigravity completely (including the tray icon) and re-run this patch.",
-            file=sys.stderr,
-        )
-        raise SystemExit(2) from last_exc
+    _retry_on_lock(lambda: write_asar(asar_path, source_header, source_files), "app.asar")
 
     print("[4/5] Verifying written app.asar...")
     _, f_verify = read_asar(asar_path)
@@ -735,15 +758,7 @@ def cmd_restore(install_dir: Path) -> None:
     elif not bak_path.exists():
         print(f"No backup found at {bak_path}. Nothing to restore.")
     else:
-        try:
-            shutil.copy2(bak_path, asar_path)
-        except PermissionError as exc:
-            print(
-                "\n[ERROR] Cannot restore app.asar because Antigravity is still running.\n"
-                "Please close Antigravity completely (including the tray icon) and re-run.",
-                file=sys.stderr,
-            )
-            raise SystemExit(2) from exc
+        _retry_on_lock(lambda: shutil.copy2(bak_path, asar_path), "app.asar", action_word="restore")
         print(f"Restored original app.asar from {bak_path}.")
 
     restore_language_server_titles(install_dir)
@@ -759,7 +774,11 @@ def main() -> None:
     parser.add_argument("--print-dir", action="store_true", help="Print resolved Antigravity install directory and exit")
     args = parser.parse_args()
 
-    install_dir = resolve_install_dir(args.dir)
+    try:
+        install_dir = resolve_install_dir(args.dir)
+    except FileNotFoundError as exc:
+        print(f"[ERROR] {exc}", file=sys.stderr)
+        raise SystemExit(1) from exc
     if args.print_dir:
         print(str(install_dir))
         return

@@ -24,8 +24,16 @@ if not defined PY_CMD (
     exit /b 1
 )
 
+if "%~1"=="--help" goto :show_help
+if "%~1"=="-h" goto :show_help
+
+set "_DIR_TMP=%TEMP%\antigravity_ru_dir_%RANDOM%_%RANDOM%.tmp"
+!PY_CMD! "%~dp0patch_antigravity_ru.py" %* --print-dir > "%_DIR_TMP%"
 set "INSTALL_DIR="
-for /f "usebackq delims=" %%I in (`!PY_CMD! "%~dp0patch_antigravity_ru.py" --print-dir %*`) do set "INSTALL_DIR=%%I"
+if exist "%_DIR_TMP%" (
+    for /f "usebackq delims=" %%I in ("%_DIR_TMP%") do set "INSTALL_DIR=%%I"
+    del /q "%_DIR_TMP%" >nul 2>&1
+)
 if not defined INSTALL_DIR (
     echo [ОШИБКА] Не удалось определить папку установки Antigravity.
     echo          Передайте путь вручную: apply_patch.bat --dir "C:\Путь\к\antigravity"
@@ -44,8 +52,7 @@ echo     ВАЖНО: сохраните все несохранённые дан
 echo.
 set "CLOSE_AGY=Y"
 set /p "CLOSE_AGY=Закрыть Antigravity сейчас и установить патч? [Y/n]: "
-if /I "!CLOSE_AGY!"=="n" goto :need_manual_close
-if /I "!CLOSE_AGY!"=="н" goto :need_manual_close
+for %%K in (n no н Н нет Нет НЕТ т Т) do if /I "!CLOSE_AGY!"=="%%K" goto :need_manual_close
 
 echo Плавное закрытие Antigravity...
 taskkill /IM Antigravity.exe >nul 2>&1
@@ -82,8 +89,7 @@ echo.
 echo [OK] Операция завершена.
 set "LAUNCH_AGY=Y"
 set /p "LAUNCH_AGY=Запустить Antigravity сейчас? [Y/n]: "
-if /I "!LAUNCH_AGY!"=="n" goto :done_no_launch
-if /I "!LAUNCH_AGY!"=="н" goto :done_no_launch
+for %%K in (n no н Н нет Нет НЕТ т Т) do if /I "!LAUNCH_AGY!"=="%%K" goto :done_no_launch
 if exist "!INSTALL_DIR!\Antigravity.exe" (
     echo Запуск Antigravity...
     explorer.exe "!INSTALL_DIR!\Antigravity.exe"
@@ -92,6 +98,11 @@ timeout /t 1 /nobreak >nul
 exit /b 0
 
 :done_no_launch
+pause
+exit /b 0
+
+:show_help
+!PY_CMD! "%~dp0patch_antigravity_ru.py" --help
 pause
 exit /b 0
 
