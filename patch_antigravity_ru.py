@@ -2,15 +2,16 @@
 """
 Russian localization patcher for Google Antigravity (Electron desktop app).
 
-Patches `resources/app.asar` cleanly (without modifying signed binaries):
+Patches Google Antigravity desktop resources cleanly with automatic `.bak` backups:
 - Sets Chromium `--lang=ru` so built-in Chromium/Electron dialogs & locale data use Russian.
 - Translates Electron main-process menus, tray, updater, dialogs, IDE wizard, and SSH prompts.
 - Translates all renderer context menus passed via IPC (`window:show-context-menu`).
 - Injects a sandbox-safe DOM localization observer (`ru_i18n` + `ru_dom_translator`)
   into `dist/preload.js` to translate the React Hub UI in real time while preserving
   Material Symbols icons, code editors, terminals, math, and AI markdown prose.
-- Optionally updates the conversation title prompt in `resources/bin/language_server.exe`
-  (exact 110-byte in-place replacement, with `.bak` backup) so generated chat titles are in Russian.
+- Updates the conversation title prompt in `resources/bin/language_server.exe`
+  (exact 110-byte in-place replacement, with `.bak` backup and `--no-ru-titles` opt-out)
+  so newly generated chat titles are in Russian.
 """
 from __future__ import annotations
 
@@ -566,41 +567,6 @@ def resolve_install_dir(explicit: str | None) -> Path:
     )
 
 
-def patch_language_server_titles(install_dir: Path, dry_run: bool = False) -> str:
-    """Switch conversation title generation in language_server.exe to Russian (exact byte-length replacement)."""
-    assert len(LS_TITLE_PROMPT_OLD) == len(LS_TITLE_PROMPT_NEW) == 110
-    ls_path = install_dir / "resources" / "bin" / "language_server.exe"
-    bak_path = install_dir / "resources" / "bin" / "language_server.exe.bak"
-    if not ls_path.exists():
-        print(f"      [warn] {ls_path} not found; skipping Russian chat title patch.")
-        return "missing"
-
-    data = ls_path.read_bytes()
-    old_cnt = data.count(LS_TITLE_PROMPT_OLD)
-    new_cnt = data.count(LS_TITLE_PROMPT_NEW)
-
-    if new_cnt == 1 and old_cnt == 0:
-        print("      language_server.exe already patched for Russian chat titles.")
-        return "already-patched"
-
-    if old_cnt != 1 or new_cnt != 0:
-        print(
-            f"      [warn] language_server.exe title prompt mismatch "
-            f"(old={old_cnt}, new={new_cnt}); skipping."
-        )
-        return "skipped"
-
-    if dry_run:
-        print("      [dry-run] language_server.exe title prompt found (110 bytes); exact-length Russian patch ready.")
-        return "dry-run-ready"
-
-    print(f"      Creating language_server backup: {bak_path}")
-    shutil.copy2(ls_path, bak_path)
-
-    patched = data.replace(LS_TITLE_PROMPT_OLD, LS_TITLE_PROMPT_NEW, 1)
-    assert len(patched) == len(data)
-    assert patched.count(LS_TITLE_PROMPT_NEW) == 1
-
 def _retry_on_lock(action, target_label: str, action_word: str = "overwrite", cleanup=None) -> None:
     """Retry a file replacement/copy when Antigravity processes are still releasing locks."""
     last_exc = None
@@ -638,13 +604,21 @@ def patch_language_server_titles(install_dir: Path, dry_run: bool = False) -> st
     new_cnt = data.count(LS_TITLE_PROMPT_NEW)
 
     if new_cnt == 1 and old_cnt == 0:
+        if bak_path.exists():
+            bak_data = bak_path.read_bytes()
+            expected_patched = bak_data.replace(LS_TITLE_PROMPT_OLD, LS_TITLE_PROMPT_NEW, 1)
+            if bak_data.count(LS_TITLE_PROMPT_OLD) != 1 or hashlib.sha256(expected_patched).hexdigest() != hashlib.sha256(data).hexdigest():
+                print(
+                    f"      [warn] Existing {bak_path.name} does not match current patched language_server.exe.",
+                    file=sys.stderr,
+                )
         print("      language_server.exe already patched for Russian chat titles.")
         return "already-patched"
 
     if old_cnt != 1 or new_cnt != 0:
         print(
             f"      [warn] language_server.exe title prompt mismatch "
-            f"(old={old_cnt}, new={new_cnt}); skipping."
+            f"(old={old_cnt}, new={new_cnt}); leaving file untouched and continuing."
         )
         return "skipped"
 
@@ -652,12 +626,21 @@ def patch_language_server_titles(install_dir: Path, dry_run: bool = False) -> st
         print("      [dry-run] language_server.exe title prompt found (110 bytes); exact-length Russian patch ready.")
         return "dry-run-ready"
 
-    print(f"      Creating language_server backup: {bak_path}")
-    shutil.copy2(ls_path, bak_path)
+    cur_sha = hashlib.sha256(data).hexdigest()
+    if bak_path.exists():
+        if _sha256_file(bak_path) != cur_sha:
+            print(f"      Updating language_server backup (new version detected): {bak_path}")
+            shutil.copy2(ls_path, bak_path)
+        else:
+            print(f"      Keeping verified language_server backup: {bak_path}")
+    else:
+        print(f"      Creating language_server backup: {bak_path}")
+        shutil.copy2(ls_path, bak_path)
 
     patched = data.replace(LS_TITLE_PROMPT_OLD, LS_TITLE_PROMPT_NEW, 1)
-    assert len(patched) == len(data)
-    assert patched.count(LS_TITLE_PROMPT_NEW) == 1
+    if len(patched) != len(data) or patched.count(LS_TITLE_PROMPT_NEW) != 1:
+        print("      [warn] Post-replacement verification failed; leaving language_server.exe untouched.")
+        return "skipped"
 
     tmp_path = ls_path.with_suffix(".exe.tmp")
     tmp_path.write_bytes(patched)
@@ -671,21 +654,40 @@ def patch_language_server_titles(install_dir: Path, dry_run: bool = False) -> st
     return "patched"
 
 
-def restore_language_server_titles(install_dir: Path) -> None:
-    """Restore original language_server.exe if patched by this tool."""
+def restore_language_server_titles(install_dir: Path) -> bool:
+    """Restore original language_server.exe if patched and backed up from the matching version."""
     ls_path = install_dir / "resources" / "bin" / "language_server.exe"
     bak_path = install_dir / "resources" / "bin" / "language_server.exe.bak"
     if not ls_path.exists():
-        return
+        return True
     data = ls_path.read_bytes()
     if LS_TITLE_PROMPT_NEW not in data:
-        print("language_server.exe is not patched — nothing to restore.")
-        return
+        if bak_path.exists() and _sha256_file(bak_path) != hashlib.sha256(data).hexdigest():
+            print("language_server.exe is unpatched and newer than .bak — skipping restore to keep current version.")
+        else:
+            print("language_server.exe is not patched — nothing to restore.")
+        return True
     if not bak_path.exists():
-        print(f"No backup found at {bak_path}. Cannot restore language_server.exe.")
-        return
+        print(
+            f"[ERROR] Backup missing at {bak_path}. Cannot restore patched language_server.exe.",
+            file=sys.stderr,
+        )
+        return False
+    bak_data = bak_path.read_bytes()
+    if (
+        bak_data.count(LS_TITLE_PROMPT_OLD) != 1
+        or hashlib.sha256(bak_data.replace(LS_TITLE_PROMPT_OLD, LS_TITLE_PROMPT_NEW, 1)).hexdigest()
+        != hashlib.sha256(data).hexdigest()
+    ):
+        print(
+            f"[ERROR] Backup {bak_path} does not match the current language_server.exe version; "
+            "refusing to overwrite with an incompatible backup.",
+            file=sys.stderr,
+        )
+        return False
     _retry_on_lock(lambda: shutil.copy2(bak_path, ls_path), "language_server.exe", action_word="restore")
     print(f"Restored original language_server.exe from {bak_path}.")
+    return True
 
 
 def cmd_apply(install_dir: Path, dry_run: bool = False, ru_titles: bool = True) -> None:
@@ -761,18 +763,24 @@ def cmd_apply(install_dir: Path, dry_run: bool = False, ru_titles: bool = True) 
         print(f"Done with warnings ({stats.missed} pattern(s) skipped). Antigravity at {install_dir} patched.")
 
 
-def cmd_restore(install_dir: Path) -> None:
+def cmd_restore(install_dir: Path) -> bool:
     asar_path = install_dir / "resources" / "app.asar"
     bak_path = install_dir / "resources" / "app.asar.bak"
+    asar_ok = True
     if not is_patched(asar_path):
         print("app.asar is not patched (possibly updated by Antigravity) — nothing to restore.")
     elif not bak_path.exists():
-        print(f"No backup found at {bak_path}. Nothing to restore.")
+        print(
+            f"[ERROR] Backup missing at {bak_path}. Cannot restore patched app.asar.",
+            file=sys.stderr,
+        )
+        asar_ok = False
     else:
         _retry_on_lock(lambda: shutil.copy2(bak_path, asar_path), "app.asar", action_word="restore")
         print(f"Restored original app.asar from {bak_path}.")
 
-    restore_language_server_titles(install_dir)
+    ls_ok = restore_language_server_titles(install_dir)
+    return asar_ok and ls_ok
 
 
 def _sha256_file(path: Path) -> str:
@@ -787,10 +795,12 @@ def _sha256_file(path: Path) -> str:
 
 
 def verify_antigravity_dir(cand: Path) -> Optional[dict]:
-    """Verify an Antigravity directory by reference layout, ASAR metadata/hashes, and binaries."""
+    """Identify an Antigravity folder by mandatory markers (EXE + app.asar + package.json), with extra signals & state hashes."""
     asar_path = cand / "resources" / "app.asar"
+    asar_bak = cand / "resources" / "app.asar.bak"
     exe_path = cand / "Antigravity.exe"
     ls_path = cand / "resources" / "bin" / "language_server.exe"
+    ls_bak = cand / "resources" / "bin" / "language_server.exe.bak"
     ru_pak = cand / "locales" / "ru.pak"
     if not asar_path.is_file() or not exe_path.is_file():
         return None
@@ -802,23 +812,9 @@ def verify_antigravity_dir(cand: Path) -> Optional[dict]:
     except OSError:
         return None
 
-    layout_hits = 2  # Antigravity.exe + resources/app.asar
-    if ls_path.is_file():
-        layout_hits += 1
-    if ru_pak.is_file():
-        layout_hits += 1
-
-    # Check ASAR header + embedded package.json identity + SHA-256 block integrity on core files
-    read_path = cand / "resources" / "app.asar.bak"
-    currently_patched = False
     try:
         currently_patched = is_patched(asar_path)
-    except Exception:
-        return None
-
-    inspect_asar = read_path if (currently_patched and read_path.is_file()) else asar_path
-    try:
-        header, files = read_asar(inspect_asar)
+        _, files = read_asar(asar_path)
     except Exception:
         return None
 
@@ -834,30 +830,35 @@ def verify_antigravity_dir(cand: Path) -> Optional[dict]:
     if "antigravity" not in name_lc and "antigravity" not in prod_lc:
         return None
 
-    core_required = ("package.json", "dist/main.js", "dist/preload.js", "dist/menu.js")
-    if not all(k in files for k in core_required):
-        return None
+    # Optional confidence signals (do not reject valid installs if missing)
+    optional_hits: List[str] = []
+    if ls_path.is_file():
+        optional_hits.append("language_server.exe")
+    if ru_pak.is_file():
+        optional_hits.append("locales/ru.pak")
+    if all(k in files for k in ("dist/main.js", "dist/preload.js", "dist/menu.js")):
+        optional_hits.append("dist/core")
 
-    # Verify SHA-256 integrity hashes recorded in ASAR header match actual bytes
-    hashes_ok = True
-    cur_node = header
-    for rel in core_required:
-        node = header
-        for part in rel.split("/"):
-            node = node.get("files", {}).get(part, {})
-        expected_hash = node.get("integrity", {}).get("hash")
-        actual_hash = hashlib.sha256(files[rel]).hexdigest()
-        if expected_hash != actual_hash:
-            hashes_ok = False
-            break
+    asar_sha256 = _sha256_file(asar_path)
+    if currently_patched:
+        asar_state = "пропатчено (RU)"
+    elif asar_bak.is_file() and _sha256_file(asar_bak) != asar_sha256:
+        asar_state = "оригинал (обновилось относительно .bak)"
+    else:
+        asar_state = "оригинал (EN)"
 
-    ls_patched = False
     ls_sha256 = None
+    ls_state = "отсутствует"
     if ls_path.is_file():
         try:
             ls_sha256 = _sha256_file(ls_path)
             ls_data = ls_path.read_bytes()
-            ls_patched = LS_TITLE_PROMPT_NEW in ls_data
+            if LS_TITLE_PROMPT_NEW in ls_data:
+                ls_state = "RU-заголовки"
+            elif ls_bak.is_file() and _sha256_file(ls_bak) != ls_sha256:
+                ls_state = "EN-заголовки (обновилось относительно .bak)"
+            else:
+                ls_state = "EN-заголовки"
         except OSError:
             pass
 
@@ -865,13 +866,13 @@ def verify_antigravity_dir(cand: Path) -> Optional[dict]:
         "path": str(cand),
         "product_name": pkg.get("productName") or pkg.get("name") or "Antigravity",
         "version": str(pkg.get("version", "unknown")),
-        "layout": f"{layout_hits}/4",
-        "asar_hashes_ok": hashes_ok,
+        "optional_signals": optional_hits,
         "asar_patched": currently_patched,
-        "ls_patched": ls_patched,
+        "asar_state": asar_state,
+        "ls_state": ls_state,
         "fuse_integrity": check_asar_integrity_fuse(cand),
         "exe_sha256": _sha256_file(exe_path),
-        "asar_sha256": _sha256_file(asar_path),
+        "asar_sha256": asar_sha256,
         "ls_sha256": ls_sha256,
     }
 
@@ -883,7 +884,6 @@ def _candidate_dirs_from_system() -> List[Path]:
         if d:
             raw.append(d)
 
-    # All user profiles under C:\Users
     users_root = Path(os.environ.get("SystemDrive", "C:") + "\\Users")
     if users_root.is_dir():
         try:
@@ -893,14 +893,12 @@ def _candidate_dirs_from_system() -> List[Path]:
         except OSError:
             pass
 
-    # PATH executables
     for exe_name in ("Antigravity.exe", "antigravity", "antigravity.cmd"):
         found = shutil.which(exe_name)
         if found:
             p = Path(found).resolve()
             raw.extend([p.parent, p.parent.parent])
 
-    # Running processes
     if os.name == "nt":
         try:
             ps = (
@@ -922,7 +920,6 @@ def _candidate_dirs_from_system() -> List[Path]:
         except Exception:
             pass
 
-    # Windows Registry (Uninstall + App Paths)
     if winreg is not None:
         uninstall_roots = [
             (winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Uninstall"),
@@ -966,7 +963,6 @@ def _candidate_dirs_from_system() -> List[Path]:
             except OSError:
                 pass
 
-    # Desktop & Start Menu .lnk shortcuts
     if os.name == "nt":
         try:
             ps_lnk = (
@@ -1021,8 +1017,8 @@ def _get_fixed_drives() -> List[Path]:
     return drives
 
 
-def _scan_fixed_drives(max_depth: int = 6) -> List[Path]:
-    """Scan all local fixed drives for Antigravity installations, pruning heavy OS/cache folders."""
+def _scan_fixed_drives(max_depth: int = 6) -> Tuple[List[Path], float, bool]:
+    """Scan fixed local drives for Antigravity installations with progress output and Ctrl+C handling."""
     skip_dirs = {
         "$recycle.bin", "system volume information", "windows", "winsxs",
         "recovery", "$winreagent", "perflogs", "node_modules", ".git", ".hg",
@@ -1031,10 +1027,22 @@ def _scan_fixed_drives(max_depth: int = 6) -> List[Path]:
     }
     found: List[Path] = []
     seen = set()
+    started = time.monotonic()
+    stats = {"dirs": 0, "last_print": 0.0}
+    interrupted = False
+
+    def show_progress(path_label: str) -> None:
+        now = time.monotonic()
+        if now - stats["last_print"] >= 0.25:
+            stats["last_print"] = now
+            short = path_label if len(path_label) <= 52 else "..." + path_label[-49:]
+            print(f"\r      Сканирование [{stats['dirs']} папок]: {short:<52}", end="", flush=True)
 
     def walk_dir(current: Path, depth: int) -> None:
         if depth > max_depth:
             return
+        stats["dirs"] += 1
+        show_progress(str(current))
         try:
             entries = list(os.scandir(current))
         except OSError:
@@ -1058,15 +1066,22 @@ def _scan_fixed_drives(max_depth: int = 6) -> List[Path]:
                 continue
             walk_dir(Path(entry.path), depth + 1)
 
-    for drive in _get_fixed_drives():
-        print(f"      Сканирование диска {drive} ...", flush=True)
-        walk_dir(drive, 0)
-    return found
+    try:
+        for drive in _get_fixed_drives():
+            print(f"      Диск {drive} ...", flush=True)
+            walk_dir(drive, 0)
+            print("", flush=True)
+    except KeyboardInterrupt:
+        interrupted = True
+        print("\n      [!] Глубокое сканирование прервано пользователем (Ctrl+C).", flush=True)
+
+    elapsed = time.monotonic() - started
+    return found, elapsed, interrupted
 
 
 def cmd_search(deep: bool = False, out_file: Optional[str] = None) -> None:
-    """Search PC for Antigravity installations using system clues + reference/hash checks."""
-    print("[1/3] Проверка стандартных путей, процессов, реестра и ярлыков...")
+    """Search PC for Antigravity installations using fast clues first and deep fixed-drive scan on demand."""
+    print("[1/3] Быстрый поиск (пути по умолчанию, процессы, реестр, ярлыки, PATH)...")
     candidates = _candidate_dirs_from_system()
     verified: List[dict] = []
     seen_norm = set()
@@ -1083,25 +1098,33 @@ def cmd_search(deep: bool = False, out_file: Optional[str] = None) -> None:
 
     check_candidates(candidates)
 
-    if deep or not verified:
-        print("[2/3] Глубокий поиск по всем локальным дискам (эталонная структура + SHA-256)...")
-        check_candidates(_scan_fixed_drives())
-    else:
-        print("[2/3] Глубокое сканирование дисков не потребовалось.")
+    run_deep = deep or not verified
+    if not run_deep and out_file and sys.stdin and sys.stdin.isatty():
+        print(f"      Быстрый поиск уже нашёл установок: {len(verified)} (первая: {verified[0]['path']}).")
+        ans = input("      Выполнить глубокое сканирование всех фиксированных дисков (Ctrl+C — прервать)? [y/N]: ").strip().lower()
+        run_deep = ans in ("y", "yes", "д", "да")
 
-    print("[3/3] Результаты проверки по эталону и хэшам:")
+    if run_deep:
+        print("[2/3] Глубокое сканирование фиксированных дисков (без системных и съёмных/сетевых)...")
+        disk_cands, elapsed, interrupted = _scan_fixed_drives()
+        check_candidates(disk_cands)
+        print(f"      Сканирование завершено за {elapsed:.1f} с{' (прервано)' if interrupted else ''}.")
+        if interrupted and not verified:
+            raise SystemExit(130)
+    else:
+        print("[2/3] Глубокое сканирование дисков пропущено.")
+
+    print("[3/3] Результаты проверки:")
     if not verified:
         print("      [!] Подтверждённые установки Google Antigravity не найдены.")
+        print('      Укажите путь вручную: apply_patch.bat --dir "C:\\Путь\\к\\antigravity"')
         raise SystemExit(1)
 
     for idx, info in enumerate(verified, 1):
-        status = "патчен (RU)" if info["asar_patched"] else "оригинал (EN)"
-        ls_state = "RU-заголовки" if info["ls_patched"] else "EN-заголовки"
-        hash_flag = "OK" if info["asar_hashes_ok"] else "WARN"
+        extra = ", ".join(info["optional_signals"]) if info["optional_signals"] else "нет"
         print(f"\n  [{idx}] {info['path']}")
-        print(f"      Продукт:     {info['product_name']} v{info['version']} (эталон {info['layout']}, ASAR-хэши: {hash_flag})")
-        print(f"      Состояние:   app.asar = {status}; language_server = {ls_state}")
-        print(f"      EXE SHA256:  {info['exe_sha256'][:24]}...")
+        print(f"      Продукт:     {info['product_name']} v{info['version']} (обязательные: 3/3; доп. признаки: {extra})")
+        print(f"      Состояние:   app.asar = {info['asar_state']}; language_server = {info['ls_state']}")
         print(f"      ASAR SHA256: {info['asar_sha256'][:24]}...")
         if info["ls_sha256"]:
             print(f"      LS SHA256:   {info['ls_sha256'][:24]}...")
@@ -1109,9 +1132,15 @@ def cmd_search(deep: bool = False, out_file: Optional[str] = None) -> None:
     selected = verified[0]
     if out_file:
         if len(verified) > 1:
-            choice = input(f"\nНайдено установок: {len(verified)}. Выберите номер [1-{len(verified)}] (Enter = 1): ").strip()
-            if choice.isdigit() and 1 <= int(choice) <= len(verified):
-                selected = verified[int(choice) - 1]
+            while True:
+                choice = input(f"\nНайдено установок: {len(verified)}. Выберите номер [1-{len(verified)}] (Enter = 1): ").strip()
+                if not choice:
+                    selected = verified[0]
+                    break
+                if choice.isdigit() and 1 <= int(choice) <= len(verified):
+                    selected = verified[int(choice) - 1]
+                    break
+                print(f"Введите число от 1 до {len(verified)}.")
         Path(out_file).write_text(selected["path"], encoding="utf-8")
 
 
@@ -1177,38 +1206,45 @@ def _close_antigravity_gracefully(log_fn) -> None:
     log_fn("PROC", "Процессы Antigravity завершены.")
 
 
-def _force_english_baseline(log_fn) -> None:
-    """Reset any user locale override in Antigravity argv.json to English before re-patching."""
+def _inspect_argv_json() -> str:
+    """Read Antigravity argv.json locale state without modifying it."""
     if os.name != "nt":
-        return
+        return "не применимо (не Windows)"
     argv_path = Path(os.environ.get("APPDATA", "")) / "Antigravity" / "User" / "argv.json"
     if not argv_path.is_file():
-        log_fn("LOCALE", "Пользовательский argv.json отсутствует — используется исходная английская локаль.")
-        return
+        return "argv.json отсутствует"
     try:
         raw = argv_path.read_text(encoding="utf-8")
-        # Strip // comments if present before parsing
         cleaned = "\n".join(line for line in raw.splitlines() if not line.lstrip().startswith("//"))
         data = json.loads(cleaned)
-        if isinstance(data, dict) and data.get("locale") != "en":
-            data["locale"] = "en"
-            argv_path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-            log_fn("LOCALE", f"Сброшен параметр locale='en' в {argv_path}.")
-        else:
-            log_fn("LOCALE", "В argv.json уже установлена английская локаль.")
+        if isinstance(data, dict) and "locale" in data:
+            return f"argv.json locale={data['locale']!r}"
+        return "argv.json без поля locale"
     except Exception as exc:
-        log_fn("LOCALE", f"Не удалось обработать argv.json ({exc}); продолжаем.")
+        return f"argv.json (ошибка чтения: {exc})"
 
 
-def cmd_debug(install_dir: Path, ru_titles: bool = True) -> None:
-    """Reset to clean English, patch Antigravity, launch it, and stream live logs until 'stop'."""
+def _create_unique_debug_log(debug_dir: Path) -> Path:
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    cand = debug_dir / f"patch_debug_{ts}.log"
+    suffix = 2
+    while cand.exists():
+        cand = debug_dir / f"patch_debug_{ts}_{suffix}.log"
+        suffix += 1
+    return cand
+
+
+def cmd_debug(install_dir: Path, ru_titles: bool = True, start_antigravity_logs: bool = False) -> None:
+    """Debug session: restore baseline, re-apply patch cleanly, launch Antigravity, stream logs on demand until 'stop'."""
     debug_dir = _get_desktop_dir() / "patchdebug"
     debug_dir.mkdir(parents=True, exist_ok=True)
-    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_path = debug_dir / f"patch_debug_{ts}.log"
+    if not debug_dir.is_dir():
+        raise OSError(f"Failed to create debug directory: {debug_dir}")
+    log_path = _create_unique_debug_log(debug_dir)
 
     log_fp = log_path.open("w", encoding="utf-8", buffering=1)
     lock = threading.Lock()
+    antigravity_logs_enabled = start_antigravity_logs
 
     def log(tag: str, msg: str) -> None:
         stamp = datetime.now().strftime("%H:%M:%S")
@@ -1222,70 +1258,96 @@ def cmd_debug(install_dir: Path, ru_titles: bool = True) -> None:
     tee_out = _TeeStream(sys.stdout, log_fp)
     tee_err = _TeeStream(sys.stderr, log_fp)
 
+    privacy_msg = "Перед публикацией проверьте лог-файл и при необходимости замените имя пользователя Windows в путях."
+    final_status = "УСТАНОВКА В ПРОМЕЖУТОЧНОМ СОСТОЯНИИ (проверьте ошибки выше)"
+
     try:
-        log("DEBUG", f"Лог-папка: {debug_dir}")
+        log("PRIVACY", privacy_msg)
+        log("DEBUG", f"Лог-папка подтверждена: {debug_dir}")
         log("DEBUG", f"Лог-файл:  {log_path}")
         log("DEBUG", f"Папка Antigravity: {install_dir}")
+        log("LOCALE", f"Исходное состояние: {_inspect_argv_json()} (файл argv.json не изменяется)")
 
         log("STEP 1", "Плавное закрытие перед откатом...")
         _close_antigravity_gracefully(log)
 
-        log("STEP 2", "Откат изменений к оригиналу и принудительная установка английского...")
+        log("STEP 2", "Откат к оригинальной английской версии...")
         with contextlib.redirect_stdout(tee_out), contextlib.redirect_stderr(tee_err):
-            cmd_restore(install_dir)
-        _force_english_baseline(log)
-        asar_state = is_patched(install_dir / "resources" / "app.asar")
-        log("STEP 2", f"Проверка отката: app.asar_patched={asar_state}")
+            restore_ok = cmd_restore(install_dir)
+        if not restore_ok:
+            log("ERROR", "Откат не выполнен (отсутствует или несовместима резервная копия .bak). Прерывание.")
+            log("STATE", f"{final_status} | {_inspect_argv_json()}")
+            raise SystemExit(2)
 
-        log("STEP 3", "Повторная проверка процессов и накатывание русского патча...")
+        asar_after_restore = is_patched(install_dir / "resources" / "app.asar")
+        log("STEP 2", f"Проверка отката: app.asar_patched={asar_after_restore}; {_inspect_argv_json()}")
+        if asar_after_restore:
+            log("ERROR", "app.asar остался пропатченным после отката.")
+            log("STATE", f"{final_status} | {_inspect_argv_json()}")
+            raise SystemExit(2)
+
+        log("STEP 3", "Повторная проверка процессов и установка русского патча...")
         _close_antigravity_gracefully(log)
-        with contextlib.redirect_stdout(tee_out), contextlib.redirect_stderr(tee_err):
-            cmd_apply(install_dir, dry_run=False, ru_titles=ru_titles)
+        try:
+            with contextlib.redirect_stdout(tee_out), contextlib.redirect_stderr(tee_err):
+                cmd_apply(install_dir, dry_run=False, ru_titles=ru_titles)
+        except SystemExit as exc:
+            log("ERROR", f"Накат патча завершился с кодом {exc.code}.")
+            log("STATE", f"{final_status} | {_inspect_argv_json()}")
+            raise
 
-        # Snapshot current offsets of Antigravity live logs before launch
         app_logs_dir = Path(os.environ.get("APPDATA", "")) / "Antigravity" / "logs"
         tail_targets = {
             "MAIN": app_logs_dir / "main.log",
             "LS": app_logs_dir / "language_server.log",
         }
-        offsets: Dict[str, int] = {}
-        for tag, path in tail_targets.items():
-            offsets[tag] = path.stat().st_size if path.exists() else 0
+        offsets: Dict[str, int] = {
+            tag: (path.stat().st_size if path.exists() else 0)
+            for tag, path in tail_targets.items()
+        }
 
         exe_path = install_dir / "Antigravity.exe"
         if exe_path.is_file() and os.name == "nt":
             log("LAUNCH", f"Запуск {exe_path} через проводник (независимо от окна консоли)...")
             subprocess.Popen(["explorer.exe", str(exe_path)])
         else:
-            log("LAUNCH", f"Файл {exe_path} не найден — переход в режим ожидания логов.")
+            log("LAUNCH", f"Файл {exe_path} не найден — переход в режим командного ожидания.")
+
+        if antigravity_logs_enabled:
+            log("WARN", "Включена трансляция логов Antigravity (main.log / language_server.log): могут содержать пути с именем пользователя и фрагменты запросов!")
 
         print("\n========================================================")
-        print(f"  Живой лог пишется в: {log_path}")
-        print('  Команды: stop (остановить запись), status, open')
+        print(f"  Лог патчера пишется в: {log_path}")
+        print("  Логи самого Antigravity по умолчанию отключены для приватности.")
+        print("  Команды: logs on | logs off | status | open | stop")
         print("========================================================\n", flush=True)
 
         stop_event = threading.Event()
+        tail_flag = threading.Event()
+        if antigravity_logs_enabled:
+            tail_flag.set()
 
         def tail_worker() -> None:
             while not stop_event.is_set():
-                for tag, path in tail_targets.items():
-                    if not path.exists():
-                        continue
-                    try:
-                        size = path.stat().st_size
-                        pos = offsets.get(tag, 0)
-                        if size < pos:
-                            pos = 0
-                        if size > pos:
-                            with path.open("r", encoding="utf-8", errors="replace") as f:
-                                f.seek(pos)
-                                chunk = f.read()
-                                offsets[tag] = f.tell()
-                            for ln in chunk.splitlines():
-                                if ln.strip():
-                                    log(tag, ln)
-                    except OSError:
-                        pass
+                if tail_flag.is_set():
+                    for tag, path in tail_targets.items():
+                        if not path.exists():
+                            continue
+                        try:
+                            size = path.stat().st_size
+                            pos = offsets.get(tag, 0)
+                            if size < pos:
+                                pos = 0
+                            if size > pos:
+                                with path.open("r", encoding="utf-8", errors="replace") as f:
+                                    f.seek(pos)
+                                    chunk = f.read()
+                                    offsets[tag] = f.tell()
+                                for ln in chunk.splitlines():
+                                    if ln.strip():
+                                        log(tag, ln)
+                        except OSError:
+                            pass
                 stop_event.wait(0.4)
 
         worker = threading.Thread(target=tail_worker, daemon=True)
@@ -1301,18 +1363,39 @@ def cmd_debug(install_dir: Path, ru_titles: bool = True) -> None:
                 log("DEBUG", "Получена команда stop — остановка записи логов...")
                 stop_event.set()
                 break
+            elif low == "logs on":
+                if not tail_flag.is_set():
+                    for tag, path in tail_targets.items():
+                        offsets[tag] = path.stat().st_size if path.exists() else 0
+                    tail_flag.set()
+                log("WARN", "Трансляция логов Antigravity (main.log / language_server.log) ВКЛЮЧЕНА — возможны пути с именем пользователя и фрагменты запросов.")
+            elif low == "logs off":
+                tail_flag.clear()
+                log("DEBUG", "Трансляция логов Antigravity остановлена (пишется только лог патчера).")
             elif low == "status":
                 running = _is_antigravity_running()
                 patched = is_patched(install_dir / "resources" / "app.asar")
-                log("STATUS", f"Antigravity.exe running={running}, app.asar_patched={patched}")
+                log("STATUS", f"Antigravity.exe running={running}, app.asar_patched={patched}, {_inspect_argv_json()}, logs={'on' if tail_flag.is_set() else 'off'}")
             elif low == "open" and os.name == "nt":
                 os.startfile(str(debug_dir))
             elif cmd_in:
-                print('Неизвестная команда. Доступно: stop, status, open', flush=True)
+                print("Неизвестная команда. Доступно: logs on, logs off, status, open, stop", flush=True)
 
         worker.join(timeout=2.0)
+
+        final_patched = is_patched(install_dir / "resources" / "app.asar")
+        ls_path = install_dir / "resources" / "bin" / "language_server.exe"
+        ls_patched = ls_path.is_file() and (LS_TITLE_PROMPT_NEW in ls_path.read_bytes())
+        if final_patched:
+            final_status = f"Патч применён, язык ru (заголовки чатов: {'ru' if ls_patched else 'en'}; {_inspect_argv_json()})"
+        else:
+            final_status = f"Патч не применён, язык en ({_inspect_argv_json()})"
+
+        log("STATE", final_status)
         log("DEBUG", f"Запись логов остановлена. Файл сохранён: {log_path}")
+        log("PRIVACY", privacy_msg)
     finally:
+        log_fp.flush()
         log_fp.close()
 
 
@@ -1324,10 +1407,11 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true", help="Test patching into _dry_run_app.asar without modifying installation")
     parser.add_argument("--no-ru-titles", action="store_true", help="Skip patching language_server.exe for Russian conversation titles")
     parser.add_argument("--print-dir", action="store_true", help="Print resolved Antigravity install directory and exit")
-    parser.add_argument("--search", action="store_true", help="Search PC for Antigravity installations (fingerprints + SHA-256 hashes)")
+    parser.add_argument("--search", action="store_true", help="Search PC for Antigravity installations (fast clues, deep fixed-drive scan if needed)")
     parser.add_argument("--search-deep", action="store_true", help="Force deep scan across all fixed local drives during --search")
     parser.add_argument("--search-out", help="Write chosen installation path from --search to this file")
-    parser.add_argument("--debug", action="store_true", help="Debug mode: restore EN, close, patch RU, and stream live logs to Desktop\\patchdebug")
+    parser.add_argument("--debug", action="store_true", help="Debug mode: restore EN, close, patch RU, and log to Desktop\\patchdebug")
+    parser.add_argument("--debug-logs", action="store_true", help="Start Antigravity main/language_server log streaming immediately in --debug")
     args = parser.parse_args()
 
     if args.search or args.search_deep:
@@ -1344,7 +1428,7 @@ def main() -> None:
         return
 
     if args.debug:
-        cmd_debug(install_dir, ru_titles=not args.no_ru_titles)
+        cmd_debug(install_dir, ru_titles=not args.no_ru_titles, start_antigravity_logs=args.debug_logs)
         return
 
     if not (args.apply or args.restore or args.dry_run):
@@ -1352,7 +1436,8 @@ def main() -> None:
         raise SystemExit(1)
 
     if args.restore:
-        cmd_restore(install_dir)
+        if not cmd_restore(install_dir):
+            raise SystemExit(2)
     else:
         cmd_apply(install_dir, dry_run=args.dry_run, ru_titles=not args.no_ru_titles)
 

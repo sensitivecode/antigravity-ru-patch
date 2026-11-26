@@ -28,11 +28,11 @@ if "%~1"=="--help" goto :show_help
 if "%~1"=="-h" goto :show_help
 
 set "_FOUND_TMP=%TEMP%\antigravity_search_%RANDOM%_%RANDOM%.tmp"
-!PY_CMD! "%~dp0patch_antigravity_ru.py" --search --search-deep --search-out "%_FOUND_TMP%"
+!PY_CMD! "%~dp0patch_antigravity_ru.py" --search --search-out "%_FOUND_TMP%"
 if !errorlevel! neq 0 (
     del /q "%_FOUND_TMP%" >nul 2>&1
     echo.
-    echo [ОШИБКА] Папка с Antigravity не найдена автоматически.
+    echo [ОШИБКА] Поиск не завершён или папка Antigravity не найдена.
     pause
     exit /b 1
 )

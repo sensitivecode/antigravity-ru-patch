@@ -4,6 +4,9 @@ __pycache__/
 _dry_run_app.asar
 *.asar.bak
 *.asar.tmp
+*.exe.bak
+*.exe.tmp
+*.zip
 .DS_Store
 Thumbs.db
 desktop.ini
