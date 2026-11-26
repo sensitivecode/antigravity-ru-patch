@@ -2120,6 +2120,10 @@ const EXACT = {
   "Extension": "Расширение",
   "Plugin Operation Error:": "Ошибка операции плагина:",
   "Custom Agent Error:": "Ошибка пользовательского агента:",
+  "Sidecar feature is not available.": "Функция фоновых процессов недоступна.",
+  "Add automation": "Добавить автоматизацию",
+  "Runs even when your computer is off. Schedules only.": "Работает даже при выключенном компьютере. Только по расписанию.",
+  "Runs even when your computer is off. Schedules and events.": "Работает даже при выключенном компьютере. По расписанию и событиям.",
   "Telemetry is disabled in Settings": "Телеметрия отключена в настройках",
   "Project 4K interface without developer tooling.": "Интерфейс Project 4K без инструментов разработчика.",
   "Ignore events triggered by the automation owner to avoid self-trigger loops.": "Игнорировать события, вызванные владельцем автоматизации, чтобы избежать зацикливания.",
@@ -2436,6 +2440,20 @@ const REGEX_RULES = [
     const ruDate = dt.replace(/^(January|February|March|April|May|June|July|August|September|October|November|December) (\d{1,2}), (\d{4})$/, (__, mo, day, yr) => `${day} ${months[mo] || mo} ${yr} г`);
     return `${model} теперь доступна в платных тарифах Pro и Ultra. Доступ к сторонним моделям на вашем текущем тарифе прекратится ${ruDate}.`;
   }],
+  [/^No automations match [“"](.+)[”"]\.$/, (_, q) => `Нет автоматизаций по запросу «${q}».`],
+  [/^No (.+?) match [“"](.+)[”"]\.$/, (_, kind, q) => `Не найдено (${kind}) по запросу «${q}».`],
+  [/^Show submitted \((\d+)\)$/, (_, n) => `Показать отправленные (${n})`],
+  [/^Not referenced by any feature \((\d+)\)$/, (_, n) => `Не используется ни в одной функции (${n})`],
+  [/^Available for (.+) project$/, (_, p) => `Доступно для проекта «${p}»`],
+  [/^Could not clear site data for (.+)\.$/, (_, h) => `Не удалось очистить данные сайта ${h}.`],
+  [/^Couldn't delete cookies for (.+)\. Try again\.$/, (_, h) => `Не удалось удалить cookie для ${h}. Попробуйте снова.`],
+  [/^There are currently no Build with (.+) plugins available\.$/, (_, name) => `Сейчас нет доступных плагинов «Разработка с ${name}».`],
+  [/^No handlers configured for (.+)\.$/, (_, name) => `Обработчики для ${name} не настроены.`],
+  [/^Add (.+) resources$/, (_, name) => `Добавить ресурсы ${name}`],
+  [/^Connect your account to browse (.+)\.$/, (_, name) => `Подключите аккаунт, чтобы просматривать ${name}.`],
+  [/^Finish signing in to (.+) in your browser\.$/, (_, name) => `Завершите вход в ${name} в браузере.`],
+  [/^Stream and control (.+) directly in the side pane\.$/, (_, name) => `Управляйте ${name} и просматривайте поток прямо в боковой панели.`],
+  [/^Could not load (.+):$/, (_, name) => `Не удалось загрузить ${name}:`],
 ];
 
 function translateUiText(input) {

@@ -77,6 +77,83 @@
 
   const translatedTextCache = new WeakMap();
   const translatedAttrCache = new WeakMap();
+  const runStateByNode = new WeakMap();
+
+  function translateTextRunGroup(run) {
+    if (!run || run.length < 2) return false;
+    const parent = run[0].parentElement;
+    if (!parent || shouldSkipTextParent(parent)) return false;
+
+    const existing = runStateByNode.get(run[0]);
+    const isSameNodes =
+      existing &&
+      existing.nodes.length === run.length &&
+      existing.nodes.every((n, i) => n === run[i]);
+
+    if (isSameNodes && run.every((n, i) => n.nodeValue === existing.rendered[i])) {
+      return true;
+    }
+
+    const orig = [];
+    for (let i = 0; i < run.length; i++) {
+      const curVal = run[i].nodeValue;
+      orig.push(isSameNodes && curVal === existing.rendered[i] ? existing.orig[i] : curVal);
+    }
+
+    const combined = orig.join("");
+    if (!combined || !/[A-Za-z]/.test(combined)) {
+      if (isSameNodes) {
+        for (let i = 0; i < run.length; i++) {
+          if (run[i].nodeValue !== orig[i]) run[i].nodeValue = orig[i];
+        }
+      }
+      return false;
+    }
+
+    const next = translateUiText(combined);
+    if (next === combined) {
+      if (isSameNodes) {
+        for (let i = 0; i < run.length; i++) {
+          if (run[i].nodeValue !== orig[i]) run[i].nodeValue = orig[i];
+        }
+      }
+      return false;
+    }
+
+    const rendered = [next];
+    for (let i = 1; i < run.length; i++) rendered.push("");
+    const state = { nodes: run.slice(), orig, rendered };
+    for (let i = 0; i < run.length; i++) {
+      runStateByNode.set(run[i], state);
+      translatedTextCache.set(run[i], rendered[i]);
+      if (run[i].nodeValue !== rendered[i]) {
+        run[i].nodeValue = rendered[i];
+      }
+    }
+    return true;
+  }
+
+  function translateElementTextRuns(el) {
+    if (!el || el.nodeType !== 1 || shouldSkipTextParent(el)) return false;
+    const children = el.childNodes;
+    if (!children || children.length < 2) return false;
+    let handled = false;
+    let i = 0;
+    while (i < children.length) {
+      if (children[i].nodeType === 3) {
+        const start = i;
+        while (i < children.length && children[i].nodeType === 3) i++;
+        if (i - start >= 2) {
+          const run = [];
+          for (let j = start; j < i; j++) run.push(children[j]);
+          if (translateTextRunGroup(run)) handled = true;
+        }
+      } else {
+        i++;
+      }
+    }
+    return handled;
+  }
 
   function isIconFont(el) {
     try {
@@ -146,7 +223,9 @@
   function walkAndTranslate(root) {
     if (!root) return;
     if (root.nodeType === 3) {
-      translateTextNode(root);
+      if (!root.parentElement || !translateElementTextRuns(root.parentElement)) {
+        translateTextNode(root);
+      }
       return;
     }
     if (root.nodeType !== 1 && root.nodeType !== 9) return;
@@ -155,6 +234,7 @@
     if (base.nodeType === 1) {
       try {
         translateElementAttributes(base);
+        translateElementTextRuns(base);
       } catch {}
     }
     const walker = doc.createTreeWalker(base, 5 /* SHOW_ELEMENT | SHOW_TEXT */);
@@ -165,6 +245,7 @@
           translateTextNode(cur);
         } else if (cur.nodeType === 1) {
           translateElementAttributes(cur);
+          translateElementTextRuns(cur);
         }
       } catch {}
       cur = walker.nextNode();
@@ -195,12 +276,21 @@
       for (let i = 0; i < mutations.length; i++) {
         const m = mutations[i];
         if (m.type === "characterData") {
-          translateTextNode(m.target);
+          const p = m.target && m.target.parentElement;
+          if (!p || !translateElementTextRuns(p)) {
+            translateTextNode(m.target);
+          }
         } else if (m.type === "attributes") {
           translateElementAttributes(m.target);
         } else if (m.type === "childList") {
+          let hasTextChild = false;
           for (let j = 0; j < m.addedNodes.length; j++) {
-            walkAndTranslate(m.addedNodes[j]);
+            const added = m.addedNodes[j];
+            if (added.nodeType === 3) hasTextChild = true;
+            walkAndTranslate(added);
+          }
+          if (hasTextChild && m.target && m.target.nodeType === 1) {
+            translateElementTextRuns(m.target);
           }
           if (m.target && m.target.nodeName === "TITLE") {
             applyDocumentLangAndTitle();

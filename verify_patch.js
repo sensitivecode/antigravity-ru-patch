@@ -168,6 +168,7 @@ function makeEl(tag, cls = "", text = "", parent = null) {
     nodeName: tag.toUpperCase(),
     className: cls,
     parentElement: parent,
+    childNodes: [],
     attributes: new Map(),
     lang: "en",
     closest(sel) {
@@ -187,7 +188,9 @@ function makeEl(tag, cls = "", text = "", parent = null) {
     setAttribute(k, v) { this.attributes.set(k, v); },
   };
   if (text) {
-    nodes.push({ nodeType: 3, nodeValue: text, parentElement: el });
+    const tn = { nodeType: 3, nodeValue: text, parentElement: el };
+    el.childNodes.push(tn);
+    nodes.push(tn);
   }
   return el;
 }
@@ -200,9 +203,25 @@ const prose = makeEl("div", "prose", "Settings", rootEl);
 const proseBtn = makeEl("button", "", "Copy", prose);
 const twMenu = makeEl("div", "[&:has(>.material-symbols-outlined:first-child)]:pl-1.5", "", rootEl);
 const twItem = makeEl("span", "", "View Usage", twMenu);
+const splitP = makeEl("p", "", "", rootEl);
+const splitT0 = { nodeType: 3, nodeValue: "No ", parentElement: splitP };
+const splitT1 = { nodeType: 3, nodeValue: "automations", parentElement: splitP };
+const splitT2 = { nodeType: 3, nodeValue: " yet", parentElement: splitP };
+splitP.childNodes.push(splitT0, splitT1, splitT2);
+const countP = makeEl("p", "", "", rootEl);
+const countT0 = { nodeType: 3, nodeValue: "Show more (", parentElement: countP };
+const countT1 = { nodeType: 3, nodeValue: "3", parentElement: countP };
+const countT2 = { nodeType: 3, nodeValue: ")", parentElement: countP };
+countP.childNodes.push(countT0, countT1, countT2);
 
-const allWalkNodes = [rootEl, btn, icon, input, prose, proseBtn, twMenu, twItem, ...nodes];
+const allWalkNodes = [
+  rootEl, btn, icon, input, prose, proseBtn, twMenu, twItem,
+  splitP, splitT0, splitT1, splitT2,
+  countP, countT0, countT1, countT2,
+  ...nodes,
+];
 let walkIdx = -1;
+let moCallback = null;
 const mockGlobal = {
   location: { protocol: "https:" },
   document: {
@@ -221,6 +240,7 @@ const mockGlobal = {
   addEventListener() {},
   getComputedStyle() { return { fontFamily: "Inter" }; },
   MutationObserver: class {
+    constructor(cb) { moCallback = cb; }
     observe() {}
   },
 };
@@ -241,5 +261,10 @@ assert.strictEqual(input.getAttribute("placeholder"), "Поиск по чата�
 assert.strictEqual(nodes[2].nodeValue, "Settings");
 assert.strictEqual(nodes[3].nodeValue, "Копировать");
 assert.strictEqual(nodes[4].nodeValue, "Посмотреть лимиты");
+assert.strictEqual(splitT0.nodeValue + splitT1.nodeValue + splitT2.nodeValue, "Пока нет автоматизаций");
+assert.strictEqual(countT0.nodeValue + countT1.nodeValue + countT2.nodeValue, "Показать ещё (3)");
+countT1.nodeValue = "4";
+moCallback([{ type: "characterData", target: countT1, addedNodes: [] }]);
+assert.strictEqual(countT0.nodeValue + countT1.nodeValue + countT2.nodeValue, "Показать ещё (4)");
 
 console.log("All ASAR, i18n, preload sandbox, and DOM translator tests passed!");
