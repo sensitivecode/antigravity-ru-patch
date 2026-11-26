@@ -52,7 +52,7 @@ echo     ВАЖНО: сохраните все несохранённые дан
 echo.
 set "AUTO_REDO=Y"
 set /p "AUTO_REDO=Закрыть Antigravity, откатить патч на английский и перезапустить его? [Y/n]: "
-for %%K in (n no н Н нет Нет НЕТ т Т) do if /I "!AUTO_REDO!"=="%%K" goto :need_manual_close
+for %%K in (n no нет Нет НЕТ т Т) do if /I "!AUTO_REDO!"=="%%K" goto :need_manual_close
 set "AUTO_RELAUNCH=1"
 
 echo Плавное закрытие Antigravity...
@@ -92,7 +92,7 @@ if "!AUTO_RELAUNCH!"=="1" goto :auto_launch
 
 set "LAUNCH_AGY=Y"
 set /p "LAUNCH_AGY=Запустить Antigravity сейчас? [Y/n]: "
-for %%K in (n no н Н нет Нет НЕТ т Т) do if /I "!LAUNCH_AGY!"=="%%K" goto :done_no_launch
+for %%K in (n no нет Нет НЕТ т Т) do if /I "!LAUNCH_AGY!"=="%%K" goto :done_no_launch
 
 :auto_launch
 if exist "!INSTALL_DIR!\Antigravity.exe" (

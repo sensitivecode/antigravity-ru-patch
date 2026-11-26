@@ -33,7 +33,7 @@ echo           запись живого лога на Рабочий стол ^
 echo.
 set "CONT_DBG=Y"
 set /p "CONT_DBG=Продолжить отладочный запуск? [Y/n]: "
-for %%K in (n no н Н нет Нет НЕТ т Т) do if /I "!CONT_DBG!"=="%%K" goto :cancelled
+for %%K in (n no нет Нет НЕТ т Т) do if /I "!CONT_DBG!"=="%%K" goto :cancelled
 
 !PY_CMD! "%~dp0patch_antigravity_ru.py" --debug %*
 if !errorlevel! neq 0 (

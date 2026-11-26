@@ -37,7 +37,7 @@ echo     ВАЖНО: сохраните все несохранённые дан
 echo.
 set "CLOSE_AGY=Y"
 set /p "CLOSE_AGY=Закрыть Antigravity и восстановить оригинал? [Y/n]: "
-for %%K in (n no н Н нет Нет НЕТ т Т) do if /I "!CLOSE_AGY!"=="%%K" goto :need_manual_close
+for %%K in (n no нет Нет НЕТ т Т) do if /I "!CLOSE_AGY!"=="%%K" goto :need_manual_close
 
 echo Плавное закрытие Antigravity...
 taskkill /IM Antigravity.exe >nul 2>&1

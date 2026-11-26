@@ -52,7 +52,7 @@ def main() -> None:
         # Note: if Antigravity is running on the test host, batch prompts to close; test Cyrillic/Latin declines safely
         host_running = p._is_antigravity_running()
         if host_running:
-            for decline in ("n", "N", "no", "н", "Н", "нет", "т"):
+            for decline in ("n", "N", "no", "нет", "т"):
                 r = subprocess.run(
                     ["cmd.exe", "/c", "call", str(REPO_DIR / "apply_patch.bat"), "--dir", str(spaced_dir)],
                     input=(decline + "\r\n\r\n").encode("utf-8"),
@@ -60,7 +60,7 @@ def main() -> None:
                 )
                 txt = r.stdout.decode("utf-8", errors="replace")
                 assert "Закройте Antigravity вручную" in txt and r.returncode == 1
-            for decline in ("n", "н", "т"):
+            for decline in ("n", "нет", "т"):
                 rr = subprocess.run(
                     ["cmd.exe", "/c", "call", str(REPO_DIR / "redo_patch.bat"), "--dir", str(spaced_dir)],
                     input=(decline + "\r\n\r\n").encode("utf-8"),

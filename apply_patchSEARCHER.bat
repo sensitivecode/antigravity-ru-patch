@@ -53,7 +53,7 @@ echo.
 echo [OK] Будет использована папка: "!FOUND_DIR!"
 set "USE_FOUND=Y"
 set /p "USE_FOUND=Перейти к установке патча в эту папку? [Y/n]: "
-for %%K in (n no н Н нет Нет НЕТ т Т) do if /I "!USE_FOUND!"=="%%K" goto :cancelled
+for %%K in (n no нет Нет НЕТ т Т) do if /I "!USE_FOUND!"=="%%K" goto :cancelled
 
 echo.
 call "%~dp0apply_patch.bat" --dir "!FOUND_DIR!" %*
