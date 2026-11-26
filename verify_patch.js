@@ -112,9 +112,22 @@ assert.strictEqual(i18n.translateUiText("Resets in 6d 13h"), "Сброс чер�
 assert.strictEqual(i18n.translateUiText("4h 25m"), "4 ч 25 мин");
 assert.strictEqual(i18n.translateUiText("Configure agent execution, queued message delivery, and permissions."), "Настройка выполнения агента, отправки сообщений в очереди и разрешений.");
 assert.strictEqual(i18n.translateUiText("No automations yet"), "Пока нет автоматизаций");
+assert.strictEqual(i18n.translateUiText("No\u00a0automations\u200b yet"), "Пока нет автоматизаций");
 assert.strictEqual(i18n.translateUiText("Request Review"), "Запрос проверки");
 assert.strictEqual(i18n.translateUiText("Not set"), "Не задано");
 assert.strictEqual(i18n.translateUiText("Change"), "Изменить");
+assert.strictEqual(i18n.translateUiText("• Required"), "• Обязательно");
+assert.strictEqual(i18n.translateUiText("Custom..."), "Настроить...");
+assert.strictEqual(i18n.translateUiText("Uses your local files and tools. Schedules only."), "Использует ваши локальные файлы и инструменты. Только по расписанию.");
+assert.strictEqual(i18n.translateUiText("Gemini 4 Hydrogen (XHigh)"), "Gemini 4 Hydrogen (Сверхвысокая)");
+assert.strictEqual(
+  i18n.translateUiText("Sonnet 5.5 is now available on paid Pro and Ultra plans. Third-party model access will no longer be available on your current plan starting on November 30, 2026."),
+  "Sonnet 5.5 теперь доступна в платных тарифах Pro и Ultra. Доступ к сторонним моделям на вашем текущем тарифе прекратится 30 ноября 2026 г."
+);
+assert.strictEqual(
+  i18n.translateUiText("Create, edit, review, resize, and brand-check Canva designs with the Canva MCP server."),
+  "Создавайте, редактируйте, проверяйте, изменяйте размер и соответствие брендбуку дизайнов Canva через Canva MCP-сервер."
+);
 assert.strictEqual(i18n.translateUiText("Review"), "Обзор");
 assert.strictEqual(i18n.translateUiText("  Settings  "), "  Настройки  ");
 assert.strictEqual(i18n.translateUiText("just now"), "только что");

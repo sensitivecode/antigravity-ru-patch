@@ -2105,6 +2105,158 @@ const EXACT = {
   "The current trigger rate is too high.": "Опросы появляются слишком часто.",
   "Dev tools": "Инструменты разработчика",
   "Print telemetry to the console": "Вывод телеметрии в консоль",
+  "XHigh": "Сверхвысокая",
+  "• Required": "• Обязательно",
+  "Required": "Обязательно",
+  "Uses your local files and tools. Schedules only.": "Использует ваши локальные файлы и инструменты. Только по расписанию.",
+  "Custom...": "Настроить...",
+  "at": "в",
+  "No automations yet.": "Пока нет автоматизаций.",
+  "Offloads routine steps to a faster executor. Same quality, fewer tokens used.": "Передаёт рутинные шаги более быстрому исполнителю. То же качество при меньшем расходе токенов.",
+  "Custom": "Настраиваемый",
+  "Custom View": "Настраиваемый вид",
+  "Commands": "Команды",
+  "MCP": "MCP",
+  "Extension": "Расширение",
+  "Plugin Operation Error:": "Ошибка операции плагина:",
+  "Custom Agent Error:": "Ошибка пользовательского агента:",
+  "Telemetry is disabled in Settings": "Телеметрия отключена в настройках",
+  "Project 4K interface without developer tooling.": "Интерфейс Project 4K без инструментов разработчика.",
+  "Ignore events triggered by the automation owner to avoid self-trigger loops.": "Игнорировать события, вызванные владельцем автоматизации, чтобы избежать зацикливания.",
+  "Matches this automation's active identity.": "Соответствует активному профилю этой автоматизации.",
+  // --- Plugin Marketplace Shelves (8) ---
+  "Google Workspace": "Google Workspace",
+  "Connect to Google Workspace, including Docs, Sheets, Slides, Drive, Calendar, and Gmail.": "Подключение к Google Workspace: Документы, Таблицы, Презентации, Диск, Календарь и Gmail.",
+  "Build on Google's developer platforms, including Android, Chrome, Gemini, and Google Cloud.": "Разработка на платформах Google: Android, Chrome, Gemini и Google Cloud.",
+  "Design, Creative & Media": "Дизайн, творчество и медиа",
+  "Design, creative, and media tools.": "Инструменты для дизайна, творчества и работы с медиа.",
+  "Agent skills, databases, and interactive viewers for scientific research.": "Навыки агента, базы данных и интерактивные просмотрщики для научных исследований.",
+  "Productivity & Project Management": "Продуктивность и управление проектами",
+  "Plan work, track issues, sign documents, and manage your notes and files.": "Планируйте работу, отслеживайте задачи, подписывайте документы и управляйте заметками и файлами.",
+  "Cloud Hosting & Deployment": "Облачный хостинг и деплой",
+  "Deploy and host your apps, sites, and their backends.": "Развёртывайте и размещайте ваши приложения, сайты и их серверную часть.",
+  "Developer Tools": "Инструменты разработчика",
+  "APIs, services, and tools to build, test, secure, and run your apps.": "API, сервисы и инструменты для сборки, тестирования, защиты и запуска приложений.",
+  "Business": "Бизнес",
+  "Payments, CRM, accounting, data, identity, customer support, marketing, and workflow automation.": "Платежи, CRM, бухгалтерия, данные, идентификация, поддержка клиентов, маркетинг и автоматизация процессов.",
+  // --- Official Marketplace Plugin Titles & Descriptions (28) ---
+  "Science Overview": "Обзор: Наука",
+  "Scientific Literature": "Научная литература",
+  "Structural Biology": "Структурная биология",
+  "Mass Spectrometry": "Масс-спектрометрия",
+  "Chemistry": "Химия",
+  "Genomics": "Геномика",
+  "Robotics": "Робототехника",
+  "This plugin provides a specialized suite of skills for data engineers and database practitioners working on Google Cloud. It acts as an expert assistant, allowing you to use natural language prompts in your preferred coding agent to architect complex data pipelines, transform data with dbt, write Spark and BigQuery SQL notebooks, and orchestrate end-to-end workflows across GCP's data ecosystem.": "Специализированный набор навыков для дата-инженеров и специалистов по БД в Google Cloud: проектируйте конвейеры данных, преобразуйте данные в dbt, пишите блокноты Spark и BigQuery SQL и оркестрируйте процессы в экосистеме GCP на естественном языке.",
+  "Check availability, schedule events, and RSVP.": "Проверка занятости, планирование событий и ответы на приглашения.",
+  "Read, draft, and edit docs.": "Чтение, создание черновиков и редактирование документов.",
+  "Search, upload, download, and share files.": "Поиск, загрузка, скачивание и совместный доступ к файлам.",
+  "Search, read, draft, and send emails in Gmail.": "Поиск, чтение, создание черновиков и отправка писем в Gmail.",
+  "Read, write, and format spreadsheets.": "Чтение, запись и форматирование таблиц.",
+  "Read, edit, and export presentations.": "Чтение, редактирование и экспорт презентаций.",
+  "Core tools and knowledge required to develop for Android.": "Базовые инструменты и знания для разработки под Android.",
+  "Reliable automation, in-depth debugging, and performance analysis in Chrome using Chrome DevTools and Puppeteer": "Надёжная автоматизация, глубокая отладка и анализ производительности в Chrome через Chrome DevTools и Puppeteer.",
+  "Prototype, build & run modern apps that users love with Firebase's backend, AI, and operational infrastructure.": "Прототипируйте, создавайте и запускайте современные приложения с бэкендом, ИИ и инфраструктурой Firebase.",
+  "Using the Google Antigravity Python SDK to build AI agents": "Использование Google Antigravity Python SDK для создания ИИ-агентов.",
+  "Search and retrieve official documentation across Google Cloud, Gemini, Android, Firebase, Flutter, and Web. Requires Google Cloud credentials (ADC) or an API key.": "Поиск и получение официальной документации по Google Cloud, Gemini, Android, Firebase, Flutter и Web. Требуются учётные данные Google Cloud (ADC) или API-ключ.",
+  "Integration skill and tools for Google Maps Platform APIs": "Навык интеграции и инструменты для API Google Maps Platform.",
+  "Build applications and shell workflows with the Gemini Interactions API, Decisions API, Live API, Genie 4 interactive worlds, and Gemini API CLI, including text, image, video, speech, and music generation, managed agents, and real-time multimodal streaming.": "Создавайте приложения и CLI-сценарии с Gemini Interactions API, Decisions API, Live API, интерактивными мирами Genie 4 и Gemini API CLI: генерация текста, изображений, видео, речи и музыки, управляемые агенты и потоковый мультимодальный режим.",
+  "Google Cloud guidance for coding agents: first-project onboarding, authentication and credential selection, and safety-critical validation for gcloud CLI commands. Includes the Google Developer Knowledge MCP server for grounded, up-to-date Google Cloud documentation.": "Руководство по Google Cloud для агентов: настройка первого проекта, выбор аутентификации и проверка критичных команд gcloud CLI. Включает MCP-сервер Google Developer Knowledge для актуальной документации.",
+  "Search and retrieve official Google Health API documentation on developers.google.com/health through the Google Health Developer MCP server.": "Поиск и получение официальной документации Google Health API с developers.google.com/health через MCP-сервер Google Health Developer.",
+  "Search official Google Home, Matter, and OpenThread documentation and query Cloud-to-cloud user feedback integration diagnostics through the Google Home Developer MCP server.": "Поиск официальной документации Google Home, Matter и OpenThread и запрос диагностики Cloud-to-cloud интеграций через MCP-сервер Google Home Developer.",
+  "Keep your coding agent up to date with the latest web best practices.": "Поддерживайте актуальные знания вашего агента о лучших практиках веб-разработки.",
+  "RDKit cheminformatics, reaction and property tools, plus ChEMBL and PubChem, to work with molecules, their properties, and bioactivity data.": "Хемоинформатика RDKit, инструменты реакций и свойств, а также ChEMBL и PubChem для работы с молекулами и биоактивностью.",
+  "AlphaGenome and major genetics databases to analyze DNA variants, gene regulation, and links between genes and disease.": "AlphaGenome и ключевые генетические базы данных для анализа вариантов ДНК, регуляции генов и связи генов с заболеваниями.",
+  "Collection of tools for tandem mass spectrometry (MS/MS) analysis, including spectrum preprocessing, GNPS and MoNA spectral library search, SIRIUS formula prediction, and MetFrag and MAGMa fragment annotation.": "Набор инструментов для тандемной масс-спектрометрии (MS/MS): предобработка спектров, поиск по библиотекам GNPS и MoNA, предсказание формул SIRIUS и аннотация фрагментов MetFrag и MAGMa.",
+  "Antigravity for science highlights, and an overview of the main science plugins.": "Ключевые возможности Antigravity для науки и обзор основных научных плагинов.",
+  "Search scientific papers, clinical trials, FDA records, and historical texts.": "Поиск научных статей, клинических испытаний, записей FDA и исторических текстов.",
+  "AlphaFold, 3D visualization tools, and protein databases to explore protein structures, sequences, pathways, and drug interactions.": "AlphaFold, инструменты 3D-визуализации и базы белков для изучения структур, последовательностей, путей и лекарственных взаимодействий.",
+  "Develop ideas with context and review documents with fresh eyes.": "Развивайте идеи с учётом контекста и проверяйте документы свежим взглядом.",
+  "Official plugin for Dart and Flutter that installs Flutter/Dart Skills, Rules, Custom Agents, and Dart MCP server for building natively compiled, visually stunning applications for mobile, web, desktop, and embedded devices from a single codebase": "Официальный плагин Dart и Flutter: устанавливает навыки, правила, агентов и Dart MCP-сервер для нативной сборки приложений под мобильные, веб-, десктоп- и встраиваемые устройства из единой кодовой базы.",
+  "Connect to your managed Looker MCP server to explore data, run saved Looks, build dashboards, and validate LookML.": "Подключайтесь к управляемому MCP-серверу Looker для анализа данных, запуска сохранённых Look-отчётов, создания дашбордов и проверки LookML.",
+  "Robotics skills for any robot: 3D perception, collision-free motion planning, visual servoing, robot bring-up, sim2real, agent iteration, MuJoCo simulation, SimReady 3D asset authoring and physics auditing, and a live MuJoCo Studio 3D web sidecar.": "Навыки робототехники для любого робота: 3D-восприятие, планирование траекторий без коллизий, визуальное управление, запуск, sim2real, симуляция MuJoCo, ассеты SimReady 3D, аудит физики и веб-панель MuJoCo Studio 3D.",
+  // --- Partner Marketplace Plugin Descriptions (81) ---
+  "Build, test, and manage n8n workflows and Agents through your instance MCP server. Use official skills for node setup, credentials, and debugging.": "Создавайте, тестируйте и управляйте процессами n8n и агентами через MCP-сервер вашего инстанса с официальными навыками настройки узлов, учётных данных и отладки.",
+  "Accept payments and grow your business. Stripe's official MCP server enables AI agents to manage customers, products, prices, payment links, invoices, subscriptions, and refunds, as well as search Stripe documentation.": "Принимайте платежи и развивайте бизнес. Официальный MCP-сервер Stripe позволяет агентам управлять клиентами, товарами, ценами, ссылками оплаты, счетами, подписками и возвратами, а также искать в документации Stripe.",
+  "Read-only marketing analytics: report spend, conversions, CPA and ROAS across ad platforms, GA4 and Search Console. It never changes your accounts.": "Маркетинговая аналитика в режиме чтения: отчёты по расходам, конверсиям, CPA и ROAS из рекламных систем, GA4 и Search Console без изменений в аккаунтах.",
+  "Manage Any.do personal tasks, workspace boards and sections, subtasks, reminders, and connected calendar events from your agent.": "Управляйте личными задачами Any.do, досками и разделами, подзадачами, напоминаниями и событиями календаря через агента.",
+  "Query Arize AX projects, traces, datasets, and experiments from Antigravity, with skills for tracing, evals, and prompt optimization.": "Запрашивайте проекты, трейсы, датасеты и эксперименты Arize AX из Antigravity с навыками трассировки, оценок и оптимизации промптов.",
+  "Teamwork Graph CLI is Atlassian's agent-first interface to your entire work context: Jira issues, Confluence pages, Bitbucket PRs, along with your connected third-party data sources. Purpose-built for coding agents like Antigravity (terminal or desktop), and powered by Atlassian's context graph. Try: \"draft a Jira issue from this PR and link it to the epic.\" Run /twg-setup after install to connect Atlassian Teamwork Graph CLI to Antigravity.": "Teamwork Graph CLI — агентный интерфейс Atlassian ко всему рабочему контексту: задачам Jira, страницам Confluence, PR Bitbucket и подключённым внешним источникам. После установки выполните /twg-setup для подключения к Antigravity.",
+  "Add Auth0 authentication to any app: login, MFA, SSO, Organizations, RBAC, custom domains, and branding. Debug auth errors and migrate from other providers.": "Добавляйте аутентификацию Auth0 в любое приложение: вход, MFA, SSO, организации, RBAC, свои домены и брендинг, отладку ошибок и миграцию.",
+  "Build and deploy Base44 full-stack apps: CLI project management, JavaScript/TypeScript SDK development, and production troubleshooting skills.": "Создавайте и развёртывайте full-stack приложения Base44: управление проектами через CLI, разработка на JS/TS SDK и диагностика продакшена.",
+  "Investigate incidents, check who's on call, and query logs, metrics, traces, errors and RUM in Better Stack. Build dashboards and manage uptime monitors.": "Расследуйте инциденты, проверяйте дежурных и запрашивайте логи, метрики, трейсы, ошибки и RUM в Better Stack. Создавайте дашборды и мониторы аптайма.",
+  "Give your agent a real browser: navigate, click, type, screenshot, and extract data from any site, locally or on Browserbase cloud browsers.": "Дайте агенту реальный браузер: переходы, клики, ввод текста, скриншоты и извлечение данных с любого сайта локально или в облачных браузерах Browserbase.",
+  "Create, edit, review, resize, and brand-check Canva designs with the Canva MCP server.": "Создавайте, редактируйте, проверяйте, изменяйте размер и соответствие брендбуку дизайнов Canva через Canva MCP-сервер.",
+  "Add authentication and user management with Clerk. Skills for setup, frameworks, organizations, billing, webhooks, and testing, plus the Clerk MCP server.": "Добавляйте аутентификацию и управление пользователями через Clerk: настройка, фреймворки, организации, биллинг, вебхуки, тестирование и Clerk MCP-сервер.",
+  "Connect Antigravity to your ClickUp workspace — manage tasks, track time, and collaborate with your team without switching context.": "Подключите Antigravity к пространству ClickUp — управляйте задачами, учитывайте время и работайте с командой без смены контекста.",
+  "Build, deploy and manage apps on Cloudflare Workers, storage and AI, with platform skills and the Cloudflare API through one MCP server.": "Создавайте, развёртывайте и управляйте приложениями на Cloudflare Workers, хранилище и AI через единый MCP-сервер с навыками платформы и API Cloudflare.",
+  "Search European procurement data and manage your tender pipeline.": "Поиск по европейским госзакупкам и управление воронкой тендеров.",
+  "CodeRabbit is the governance and control layer for agentic software development helping developers trust AI written code.": "CodeRabbit — слой контроля и управления для агентной разработки, повышающий доверие к коду, написанному ИИ.",
+  "Up-to-date documentation lookup. Pull version-specific documentation and code examples directly from source repositories into your coding agent's context.": "Поиск актуальной документации: подгружайте документацию и примеры кода под нужную версию прямо из исходных репозиториев в контекст агента.",
+  "Use the official CrowdStrike-hosted MCP server to work across Falcon: detections, cases, threat intel, SIEM, hosts, vulnerabilities, cloud, and more.": "Официальный облачный MCP-сервер CrowdStrike для работы с Falcon: обнаружения, инциденты, threat intel, SIEM, хосты, уязвимости, облако и другое.",
+  "Databricks skills for the CLI, Apps, Lakebase, Model Serving, Lakeflow Jobs, Spark Declarative Pipelines, Declarative Automation Bundles (DABs), and classic-to-serverless migration.": "Навыки Databricks для CLI, Apps, Lakebase, Model Serving, Lakeflow Jobs, Spark Declarative Pipelines, DABs и миграции на serverless.",
+  "Use Datadog directly in Antigravity through a preconfigured Datadog MCP server. Query logs, metrics, traces, dashboards, and more through natural conversation.": "Работайте с Datadog прямо в Antigravity через преднастроенный MCP-сервер: запрашивайте логи, метрики, трейсы и дашборды на естественном языке.",
+  "Research U.S. case law, statutes, regulations, and court rules. Find authorities, check quotations against opinions, and see how later courts cite a case.": "Анализ прецедентного права США, законов, регламентов и судебных правил: поиск норм, сверка цитат и отслеживание последующих ссылок судов.",
+  "Build, test, and debug Docusign integrations with developer skills for authentication, template-based signing, envelope status, and troubleshooting.": "Создавайте, тестируйте и отлаживайте интеграции Docusign: аутентификация, подписание по шаблонам, статус пакетов и диагностика.",
+  "Connect Antigravity to Dropbox to search, inspect, summarize, share, collect uploads, organize folders, and clean up files with confirmation for write actions.": "Подключите Antigravity к Dropbox для поиска, просмотра, сводки, обмена ссылками, сбора загрузок, организации папок и очистки файлов с подтверждением изменений.",
+  "Investigate production issues with real Dynatrace data: problems and root causes, logs, metrics, traces, and vulnerabilities, via skills and the MCP server.": "Расследуйте сбои на реальных данных Dynatrace: проблемы и первопричины, логи, метрики, трейсы и уязвимости через навыки и MCP-сервер.",
+  "Packaged workflows for SCA remediation, AI SAST triage, CI/CD posture, malware response, findings review, Endor Labs setup, and more.": "Готовые сценарии для устранения уязвимостей SCA, триажа AI SAST, контроля CI/CD, реагирования на вредоносное ПО и настройки Endor Labs.",
+  "Turn Figma designs into production code, map components with Code Connect, and create or edit Figma files in Antigravity.": "Превращайте макеты Figma в продакшен-код, связывайте компоненты через Code Connect и создавайте или редактируйте файлы Figma в Antigravity.",
+  "Query Grafana Cloud metrics, logs, traces and profiles, manage dashboards, alerts and incidents, and ask Grafana Assistant through the hosted MCP server.": "Запрашивайте метрики, логи, трейсы и профили Grafana Cloud, управляйте дашбордами, алертами и инцидентами и обращайтесь к Grafana Assistant через MCP-сервер.",
+  "The AI notepad for meetings. Connect to your meeting history and use your conversation context to get things done.": "ИИ-блокнот для встреч. Подключайтесь к истории созвонов и используйте контекст обсуждений для выполнения задач.",
+  "Build and debug pipelines, manage deployments, investigate security findings, and operate Harness with connected tools and reusable workflow skills.": "Создавайте и отлаживайте конвейеры, управляйте деплоем, разбирайте отчёты безопасности и работайте в Harness через подключённые инструменты.",
+  "Respond to and investigate incidents, manage on-call schedules and escalations, and write runbooks and skills. Bundles the official incident.io MCP server.": "Реагируйте на инциденты и расследуйте их, управляйте графиками дежурств и эскалациями, пишите ранбуки. Включает официальный MCP-сервер incident.io.",
+  "Search Intercom conversations, contacts, and companies, spot support trends, and install the Intercom Messenger with secure identity verification.": "Поиск по диалогам, контактам и компаниям Intercom, анализ трендов поддержки и установка Intercom Messenger с безопасной верификацией.",
+  "Connect your agent to invideo's AI-native video editor. It trims, grades and mixes on a real timeline while you watch every change land.": "Подключите агента к ИИ-видеоредактору invideo: нарезка, цветокоррекция и сведение звука на реальной монтажной ленте в режиме реального времени.",
+  "Search the web and read any page as clean markdown with Keenable, a search engine built for AI agents. Keyless: no signup or API key needed.": "Поиск в интернете и чтение страниц в чистом Markdown через Keenable — поисковик для ИИ-агентов без регистрации и API-ключа.",
+  "Ask a question of the live web and get a table back. Keenable SELECT runs many searches, reads the pages and extracts the fields you need in one call. Sign in with a Keenable account.": "Задайте вопрос живому вебу и получите таблицу: Keenable SELECT выполняет поиск, читает страницы и извлекает нужные поля за один вызов. Требуется вход в Keenable.",
+  "Create and edit images with Kling Image 4.0, generate Kling 4.0 and Flash videos with supported HDR settings, reuse Elements, and track tasks.": "Создавайте и редактируйте изображения в Kling Image 4.0, генерируйте видео Kling 4.0 и Flash с HDR, переиспользуйте Elements и отслеживайте задачи.",
+  "Create, run and debug Leapwork Play tests and runlists, build agents, and hand work to Play's AI workflows, right from Antigravity.": "Создавайте, запускайте и отлаживайте тесты и списки прогона Leapwork Play, собирайте агентов и передавайте задачи в ИИ-процессы Play прямо из Antigravity.",
+  "Salaries, jobs & career advice. Levels.fyi is your career companion to ensure you get paid fairly and find jobs you'll love.": "Зарплаты, вакансии и карьерные советы. Levels.fyi помогает оценивать компенсации и находить подходящую работу.",
+  "The product development system for teams and agents. Manage issues, projects, and documents across your Linear workspace from Antigravity.": "Система разработки продуктов для команд и агентов. Управляйте задачами, проектами и документами пространства Linear из Antigravity.",
+  "Generate 3D models from text or images with Meshy, then texture them and download game-ready GLB, FBX, OBJ and USDZ files, using your Meshy credits.": "Генерируйте 3D-модели по тексту или изображениям в Meshy, текстурируйте их и скачивайте готовые для игр файлы GLB, FBX, OBJ и USDZ за кредиты Meshy.",
+  "Research US case law, statutes, and regulations, plus live dockets from federal and state courts. A Midpage account is required.": "Поиск по прецедентному праву, законам и регламентам США, а также актуальным делам федеральных судов и судов штатов. Требуется аккаунт Midpage.",
+  "Give your AI agent 600,000+ real app screens, and the skills to use them. Includes the Mobbin MCP and a skill that redesigns your screen from patterns real apps ship, in your own design system, with the references behind every change.": "Откройте агенту доступ к 600 000+ экранов реальных приложений через Mobbin MCP и навык редизайна интерфейсов на основе проверенных паттернов и вашей дизайн-системы.",
+  "Plan and track work in monday.com from Antigravity: create, update and assign items, write docs, and build forms that turn requests into items.": "Планируйте и отслеживайте задачи в monday.com из Antigravity: создавайте, обновляйте и назначайте элементы, пишите документы и формы.",
+  "Official Antigravity plugin for MongoDB Atlas (hosted MCP Server + Skills). Connect to the MongoDB-hosted Atlas MCP server, explore data, manage collections, optimize queries, generate reliable code, implement best practices, develop advanced features, and more.": "Официальный плагин для MongoDB Atlas (MCP-сервер + навыки): подключайтесь к Atlas, изучайте данные, управляйте коллекциями, оптимизируйте запросы и внедряйте лучшие практики.",
+  "Bring Claude, GPT, Muse, Kimi & more into Antigravity. Run a multi-model panel with cross-model reactions, or ask one model for a second opinion.": "Подключите Claude, GPT, Muse, Kimi и другие модели в Antigravity. Проводите мультимодельные обсуждения или запрашивайте второе мнение.",
+  "Agent skills for Neo4j graph database — write Cypher queries, design graph models, use drivers, run imports, build GraphRAG pipelines, run GDS algorithms, and manage Aura instances.": "Навыки для графовой БД Neo4j: запросы Cypher, моделирование графов, драйверы, импорт, конвейеры GraphRAG, алгоритмы GDS и управление инстансами Aura.",
+  "Build and deploy on Netlify: functions, edge functions, blobs, database, identity, forms, image CDN, caching, and AI Gateway, plus the Netlify MCP server.": "Разрабатывайте и деплойте на Netlify: функции, edge-функции, blobs, БД, аутентификация, формы, CDN изображений, кэш, AI Gateway и Netlify MCP-сервер.",
+  "Connect Antigravity to your Notion workspace with the Notion MCP server, plus skills for research, documentation, meeting prep, specs, trackers, and project updates.": "Подключите Antigravity к пространству Notion через Notion MCP-сервер и навыки для исследований, документации, подготовки встреч, спецификаций и трекеров.",
+  "Investigate cloud risk from your IDE: query Orca alerts, assets, attack paths, CVEs and compliance posture, and triage findings with Orca's MCP server.": "Исследуйте облачные риски из IDE: запрашивайте алерты, активы, пути атак, CVE и статус соответствия и проводите триаж через MCP-сервер Orca.",
+  "Create and send proposals, quotes, and contracts for e-signature. Track signing progress and identify documents that need follow-up.": "Создавайте и отправляйте коммерческие предложения и договоры на электронную подпись. Отслеживайте статус подписания и документы, требующие внимания.",
+  "Search the live web and fetch page content with Parallel's hosted MCP server. Free access with no Parallel account, API key, or Parallel CLI required.": "Поиск в интернете и загрузка содержимого страниц через облачный MCP-сервер Parallel. Бесплатный доступ без аккаунта, API-ключа и CLI.",
+  "U.S. immigration law research: published and unpublished BIA/AAO and federal cases, INA/CFR, USCIS policy, citator validity checks, and visa bulletins.": "Анализ иммиграционного права США: решения BIA/AAO и федеральных судов, INA/CFR, политика USCIS, проверка актуальности ссылок и визовые бюллетени.",
+  "Agent plugin for PingOne multi-tenant. Includes skills and a remote MCP server that lets AI agents configure and monitor your PingOne environments.": "Агентный плагин для PingOne multi-tenant с навыками и удалённым MCP-сервером для настройки и мониторинга сред PingOne.",
+  "Equip Antigravity with specialized Postman skills for the complete API lifecycle. Discover, design, test, document, mock, monitor, and improve APIs through agent-friendly, filesystem-first workflows.": "Полный цикл работы с API через Postman: проектирование, тестирование, документирование, моки, мониторинг и улучшение API в файлово-ориентированных процессах.",
+  "Set up Qodo, explore code and repository history, review local changes, and resolve pull-request findings directly from Antigravity.": "Настраивайте Qodo, исследуйте код и историю репозитория, проверяйте локальные правки и устраняйте замечания из PR прямо в Antigravity.",
+  "Deploy, configure, monitor, and troubleshoot apps, databases, and infrastructure on Railway from Antigravity with Railway's agent skill and hosted MCP server.": "Развёртывайте, настраивайте, отслеживайте и диагностируйте приложения, БД и инфраструктуру на Railway с навыком агента и облачным MCP-сервером Railway.",
+  "Skills for integrating the Scandit Data Capture SDK: product selection, docs and implementation guides for barcode scanning, ID capture and smart label capture.": "Навыки интеграции Scandit Data Capture SDK: подбор продуктов, документация и руководства по сканированию штрихкодов, документов и умных этикеток.",
+  "Transcribe meetings, interviews, podcasts and videos in 119 languages, then write minutes, show notes and subtitles from the transcripts.": "Расшифровывайте встречи, интервью, подкасты и видео на 119 языках, затем создавайте протоколы, заметки и субтитры на основе транскриптов.",
+  "SEO workflows on live Semrush data: keyword research, site audits, backlinks, competitor, traffic and market analytics, PPC, and AI brand visibility.": "SEO-процессы на актуальных данных Semrush: подбор ключевых слов, аудит сайтов, обратные ссылки, анализ конкурентов и трафика, PPC и видимость бренда для ИИ.",
+  "Query your SentinelOne Singularity Console from Antigravity through a self-hosted, read-only Purple AI MCP server. Requires an active console deployment, your console URL, and an API token.": "Запрашивайте SentinelOne Singularity Console через собственный read-only Purple AI MCP-сервер. Требуются развёрнутая консоль, её URL и API-токен.",
+  "Set up Sentry monitoring, investigate production errors, and configure alerts and releases with expert skills and live context from your Sentry projects.": "Настраивайте мониторинг Sentry, расследуйте ошибки продакшена и управляйте алертами и релизами с контекстом ваших проектов Sentry.",
+  "Triage Exabeam New-Scale alerts and cases end to end: gather the evidence, map MITRE, reach a verdict, and record it behind an approval step.": "Полный триаж алертов и кейсов Exabeam New-Scale: сбор артефактов, сопоставление с MITRE, вынесение вердикта и фиксация после подтверждения.",
+  "SonarQube is the AI code quality and security verification platform used by millions of developers to catch bugs, vulnerabilities, and leaked secrets. This plugin enforces those standards in the agent coding loop: 7,500+ distinct issue types, secrets scanning, agentic analysis, and quality gates across 40+ languages.": "SonarQube — платформа проверки качества и безопасности кода: более 7500 типов проблем, поиск утёкших секретов, агентный анализ и ворота качества для 40+ языков прямо в цикле разработки.",
+  "Turn an idea into a website, dashboard, report, or small web tool you can share. Build it in chat or bring your own work, and publish it with Spacefast.": "Превратите идею в сайт, дашборд, отчёт или веб-инструмент, которым можно поделиться: соберите в чате и опубликуйте через Spacefast.",
+  "Official Supabase plugin for Antigravity with Supabase skills and MCP access for project management, database work, auth, storage, and Postgres best practices.": "Официальный плагин Supabase с навыками и MCP-доступом для управления проектами, работы с БД, аутентификацией, хранилищем и лучшими практиками Postgres.",
+  "Make your coding agent a better engineer": "Сделайте вашего кодинг-агента ещё более сильным инженером.",
+  "Web search, content extraction, website crawling, URL discovery, and deep research for Antigravity via Tavily's hosted MCP server and skills.": "Веб-поиск, извлечение контента, краулинг сайтов, поиск URL и глубокие исследования через облачный MCP-сервер и навыки Tavily.",
+  "Run, debug and triage tests on the TestMu AI cloud, plus Kane CLI for browser and mobile test automation and Rook CLI for testing AI agents.": "Запускайте, отлаживайте и разбирайте тесты в облаке TestMu AI, а также используйте Kane CLI для автотестов и Rook CLI для проверки ИИ-агентов.",
+  "Official Trello plugin with the Trello MCP server and a skill for boards, lists, cards, checklists, Inbox, and Planner.": "Официальный плагин Trello с MCP-сервером и навыком для досок, списков, карточек, чеклистов, Inbox и Planner.",
+  "Unity's official plugin for Antigravity, with curated skills for game development, monetization, and performance optimization.": "Официальный плагин Unity с подборкой навыков для разработки игр, монетизации и оптимизации производительности.",
+  "Build and deploy web apps and AI agents on Vercel with skills for Next.js, AI SDK, and cloud services, plus the official Vercel MCP server.": "Создавайте и деплойте веб-приложения и ИИ-агентов на Vercel с навыками Next.js, AI SDK, облачных сервисов и официальным Vercel MCP-сервером.",
+  "Investigate files, URLs, domains and IP addresses with VirusTotal threat intelligence, analysis and submission recovery.": "Проверяйте файлы, URL, домены и IP-адреса с помощью аналитики угроз VirusTotal, отчётов анализа и истории отправок.",
+  "See what GPTBot, ClaudeBot, PerplexityBot and other AI crawlers get from a website. Skills and a remote MCP server for robots.txt checks, AI visibility scans and agent directory listings.": "Проверьте, что видят GPTBot, ClaudeBot, PerplexityBot и другие ИИ-краулеры на сайте: проверка robots.txt, видимость для ИИ и каталоги агентов.",
+  "Search and read your Wispr Flow meeting notes, transcripts, scratchpad notes, and calendar events. Read-only access to your own account.": "Поиск и чтение заметок со встреч, транскриптов, черновиков и событий календаря в Wispr Flow в режиме только для чтения.",
+  "Build Wix apps and headless sites, and manage Wix stores, bookings, CMS and more, with Wix CLI skills and the official Wix MCP server.": "Создавайте приложения и headless-сайты Wix, управляйте магазинами, бронированиями и CMS с навыками Wix CLI и официальным Wix MCP-сервером.",
+  "Build, publish, and manage WordPress.com and Jetpack-connected sites. Draft posts, edit blocks, check traffic stats, moderate comments, and manage plugins.": "Создавайте, публикуйте и управляйте сайтами WordPress.com и Jetpack: черновики записей, блоки, статистика трафика, модерация комментариев и плагины.",
+  "Automate workflows across 10,000+ apps. Run one-off actions or build automations for YouTube, Instagram, Gmail, Facebook Pages, LinkedIn, Slack, Pinterest.": "Автоматизируйте процессы в 10 000+ сервисах: выполняйте действия и собирайте сценарии для YouTube, Instagram, Gmail, Slack, LinkedIn и других платформ.",
+  "Manage your Bigin CRM from Antigravity: review pipelines, find contacts and deals, log calls, plan follow-ups, and email customers.": "Управляйте Bigin CRM из Antigravity: просматривайте воронки, ищите контакты и сделки, фиксируйте звонки, планируйте задачи и пишите клиентам.",
+  "Build on Zoho CRM v8: REST API, Deluge functions, ClientScript, widgets, COQL and connections, with live CRM data through your Zoho MCP server.": "Разработка на Zoho CRM v8: REST API, функции Deluge, ClientScript, виджеты, COQL и подключения с живыми данными через Zoho MCP-сервер.",
+  "Zoho Desk plugin for Antigravity. Review, prioritize, and update Zoho Desk tickets directly from Antigravity through Zoho Desk MCP and includes a Ticket Prioritization Agent for triage and priority updates.": "Плагин Zoho Desk для Antigravity: просматривайте, приоритизируйте и обновляйте тикеты Zoho Desk через MCP, включая агента триажа и приоритизации обращений.",
+  "Connect Zoho Projects to Antigravity to turn tasks and issues into working code. Access project context, investigate bugs, and update work items as you develop.": "Подключите Zoho Projects для превращения задач и багов в рабочий код: доступ к контексту проектов, разбор ошибок и обновление задач при разработке.",
+  "Run Zoho Books from Antigravity: invoicing, bills, banking, journals, projects, items, taxes, customization and automation.": "Работа с Zoho Books из Antigravity: выставление счетов, оплаты, банк, журналы, проекты, товары, налоги, настройка и автоматизация.",
 };
 
 const REGEX_RULES = [
@@ -2274,6 +2426,16 @@ const REGEX_RULES = [
   [/^No MCP servers found for "(.+)"$/, (_, q) => `MCP-серверы по запросу «${q}» не найдены`],
   [/^Are you sure you want to delete the hook "(.+)"\?$/, (_, h) => `Вы уверены, что хотите удалить хук «${h}»?`],
   [/^Enter (.+) name\.\.\.$/, (_, d) => `Введите название (${d})...`],
+  [/^(.+) \((Low|Medium|High|XHigh|Extra High)\)$/, (_, model, level) => `${model} (${EXACT[level] || level})`],
+  [/^(.+?) is now available on paid Pro and Ultra plans\. Third-party model access will no longer be available on your current plan starting on (.+)\.$/, (_, model, dt) => {
+    const months = {
+      January: "января", February: "февраля", March: "марта", April: "апреля",
+      May: "мая", June: "июня", July: "июля", August: "августа",
+      September: "сентября", October: "октября", November: "ноября", December: "декабря",
+    };
+    const ruDate = dt.replace(/^(January|February|March|April|May|June|July|August|September|October|November|December) (\d{1,2}), (\d{4})$/, (__, mo, day, yr) => `${day} ${months[mo] || mo} ${yr} г`);
+    return `${model} теперь доступна в платных тарифах Pro и Ultra. Доступ к сторонним моделям на вашем текущем тарифе прекратится ${ruDate}.`;
+  }],
 ];
 
 function translateUiText(input) {
@@ -2281,19 +2443,25 @@ function translateUiText(input) {
   // Preserve leading/trailing whitespace if exact trimmed match exists
   const trimmed = input.trim();
   if (!trimmed) return input;
+  const norm = trimmed.replace(/[\u00a0\u200b-\u200d\ufeff]+/g, " ").replace(/ {2,}/g, " ").trim();
 
   if (Object.prototype.hasOwnProperty.call(EXACT, input)) {
     return EXACT[input];
   }
-  if (Object.prototype.hasOwnProperty.call(EXACT, trimmed)) {
+  const exactKey = Object.prototype.hasOwnProperty.call(EXACT, trimmed)
+    ? trimmed
+    : Object.prototype.hasOwnProperty.call(EXACT, norm)
+    ? norm
+    : null;
+  if (exactKey !== null) {
     const lead = input.slice(0, input.indexOf(trimmed));
     const tail = input.slice(input.indexOf(trimmed) + trimmed.length);
-    return lead + EXACT[trimmed] + tail;
+    return lead + EXACT[exactKey] + tail;
   }
 
   for (let i = 0; i < REGEX_RULES.length; i++) {
     const [re, fn] = REGEX_RULES[i];
-    const m = re.exec(trimmed);
+    const m = re.exec(trimmed) || (norm !== trimmed ? re.exec(norm) : null);
     if (m) {
       const lead = input.slice(0, input.indexOf(trimmed));
       const tail = input.slice(input.indexOf(trimmed) + trimmed.length);
