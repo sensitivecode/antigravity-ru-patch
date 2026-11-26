@@ -8,6 +8,9 @@
 
 Локализация десктопного приложения **Google Antigravity** (оболочка Electron + веб-интерфейс Hub + русские заголовки новых чатов) для Windows.
 
+**Язык:** [Русский](#русская-версия-ru) | [English](#english-version-en)  
+**Быстрый переход:** [Установка](#установка-и-требования) · [Откат](#откат-и-устранение-неполадок) · [FAQ](#частые-вопросы-faq) · [Отказ от ответственности](#отказ-от-ответственности)
+
 > [!TIP]
 > **Быстрая установка:** скачайте готовый архив [`antigravity-ru-patch.zip`](https://github.com/sensitivecode/antigravity-ru-patch/releases/latest) со страницы **Releases** (качать весь исходный код репозитория через *Code → Download ZIP* не нужно).
 
@@ -103,6 +106,8 @@
 ---
 
 ## English Version (EN)
+
+**Quick jump:** [Install](#requirements--usage) · [Scripts](#which-script-to-run) · [FAQ](#faq) · [Disclaimer](#disclaimer) · [Русский](#русская-версия-ru)
 
 ### Overview
 Unofficial Russian localization patcher for **Google Antigravity** (Electron shell + Hub Web UI + Russian conversation title generation) on Windows.
