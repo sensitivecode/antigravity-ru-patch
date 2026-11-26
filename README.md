@@ -1,6 +1,40 @@
 # Патч русификации Google Antigravity (v2.0.0)
 
+[![Release](https://img.shields.io/github/v/release/sensitivecode/antigravity-ru-patch?label=Release&color=2ea44f)](https://github.com/sensitivecode/antigravity-ru-patch/releases/latest)
+[![Verify](https://github.com/sensitivecode/antigravity-ru-patch/actions/workflows/ci.yml/badge.svg)](https://github.com/sensitivecode/antigravity-ru-patch/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/sensitivecode/antigravity-ru-patch?label=License)](LICENSE)
+![Platform](https://img.shields.io/badge/Platform-Windows%2010%2F11-0078D6)
+![Dictionary](https://img.shields.io/badge/Словарь-2218%2B%20фраз-blueviolet)
+
 Локализация десктопного приложения **Google Antigravity** (оболочка Electron + веб-интерфейс Hub + русские заголовки новых чатов) для Windows.
+
+> [!TIP]
+> **Быстрая установка:** скачайте готовый архив [`antigravity-ru-patch.zip`](https://github.com/sensitivecode/antigravity-ru-patch/releases/latest) со страницы **Releases** (качать весь исходный код репозитория через *Code → Download ZIP* не нужно).
+
+---
+
+## Скриншоты (v2.0.0)
+
+| Главный экран и подсказки | Настройки и разрешения |
+| :---: | :---: |
+| ![Главный экран Antigravity](docs/images/ui-welcome.png) | ![Настройки Antigravity](docs/images/ui-settings.png) |
+
+---
+
+## Как это работает
+
+```mermaid
+flowchart TD
+    A["apply_patch.bat / apply_patchSEARCHER.bat"] --> B["patch_antigravity_ru.py --apply"]
+    B --> C["resources/app.asar (+ .bak)"]
+    B --> D["resources/bin/language_server.exe (+ .bak)"]
+    C --> C1["--lang=ru для Chromium (диалоги, Intl)"]
+    C --> C2["Перевод Electron-меню, трея и контекстных меню"]
+    C --> C3["ru_i18n.js + ru_dom_translator.js в preload.js"]
+    D --> D1["Точечная замена 110 байт в промпте заголовков"]
+    C1 & C2 & C3 --> E["Русифицированный UI (2218+ фраз, 109 плагинов)"]
+    D1 --> F["Русские названия новых чатов"]
+```
 
 ---
 
@@ -9,7 +43,7 @@
 ### Что переводится
 1. **Системные ресурсы Chromium/Electron**: включается `--lang=ru` для встроенных диалогов, дат (`Intl`) и ресурсов `locales/ru.pak`.
 2. **Оболочка Electron (`resources/app.asar`)**: меню, трей, автообновление, диалоги выбора папок/устройств/Passkey, мастер установки IDE, SSH/WSL, контекстные меню (`window:show-context-menu`).
-3. **Веб-интерфейс (Hub UI)**: DOM-переводчик `ru_dom_translator.js` + словарь `ru_i18n.js` (боковая панель, стартовые подсказки и персоны, чаты, проекты, настройки, плагины, MCP, автоматизации, встроенный браузер, терминалы, статусы инструментов) с защитой иконок, кода, терминала xterm и формул KaTeX.
+3. **Веб-интерфейс (Hub UI)**: DOM-переводчик `ru_dom_translator.js` + словарь `ru_i18n.js` (боковая панель, стартовые подсказки и персоны, чаты, проекты, настройки, автоматизации, встроенный браузер, терминалы, статусы инструментов, а также 8 категорий и 109 плагинов маркетплейса) с защитой иконок, кода, терминала `xterm`, формул `KaTeX` и склейкой составных `Text`-узлов React.
 4. **Названия новых чатов (`resources/bin/language_server.exe`)**: точечная замена промпта генератора заголовков (ровно 110 байт) для генерации названий чатов на русском языке. Отключается флагом `--no-ru-titles`.
 
 ### Что именно изменяется
@@ -53,6 +87,21 @@
 - `sync_and_verify.py` — собирает `antigravity-ru-patch.zip` на Рабочем столе, прогоняет `--dry-run`, тест `verify_patch.js` в Electron и проверяет целостность архива (`testzip()`).
 - `test_bat_bugs.py` — набор регрессионных тестов для `.bat`-скриптов, поиска установок, безопасности `language_server.exe` и `patch_debug`.
 - `verify_patch.js` — проверка целостности ASAR, синтаксиса всех 16 патченных JS-файлов в `vm.Script`, изоляции `preload.js` и DOM-переводчика.
+
+### Частые вопросы (FAQ)
+- **Обязательно ли устанавливать Python?** Да, патчер написан на открытом Python 3.8+ (`Add python.exe to PATH` при установке) без закрытых `.exe`-инсталляторов, чтобы весь код можно было проверить до запуска.
+- **Почему внутренние рассуждения модели (`Думает X с`) внутри всё равно на английском?** Поток рассуждений генерируется «на лету» самой нейросетью на сервере, а не хранится в файлах интерфейса. Статический патч переводит сам статус, меню и кнопки, но не подменяет ответы ИИ.
+- **Переводит ли патч встроенный редактор кода (IDE)?** Патч переводит десктопную оболочку, Hub UI, настройки, меню и окно запуска IDE; для русификации самого редактора VS Code / Monaco при желании можно дополнительно установить стандартный *Russian Language Pack*.
+- **Windows SmartScreen или антивирус ругается на `.bat` / `language_server.exe`:** скачанные из интернета `.bat`-файлы имеют метку Windows (*Свойства → Разблокировать*), а правка `language_server.exe` сбрасывает его цифровую подпись. Чтобы не трогать `.exe`, запускайте установку с `--no-ru-titles`.
+
+<details>
+<summary><b>История версий (Changelog)</b></summary>
+
+- **v2.0.0**: 2218+ фраз и regex-правил, перевод 8 категорий и 109 плагинов маркетплейса, фикс Tailwind-меню и составных `Text`-узлов React, `apply_patch.bat` в 1 подтверждение (с поддержкой русской раскладки `н`), новые скрипты `apply_patchSEARCHER.bat`, `redo_patch.bat`, `patch_debug.bat`.
+- **v1.1.0**: русские заголовки новых чатов через 110-байтную правку `language_server.exe` (и флаг `--no-ru-titles`), перевод 28 строк onboarding-персон.
+- **v1.0.0**: первый публичный релиз — перевод Electron shell + DOM-переводчик Hub Web UI под GPL-3.0.
+
+</details>
 
 ### Отказ от ответственности
 - Данный проект является **неофициальной** локализацией сообщества и **никак не связан с Google LLC**, не одобрен и не поддерживается компанией Google.
@@ -101,6 +150,11 @@ Maintained in the repository (excluded from release `.zip` archives):
 - `sync_and_verify.py` — builds `Desktop\antigravity-ru-patch.zip`, runs `--dry-run`, executes `verify_patch.js`, and verifies zip integrity (`testzip()`).
 - `test_bat_bugs.py` — automated regression tests for batch scripts, searcher, `language_server.exe` safety, and `cmd_debug`.
 - `verify_patch.js` — Electron test harness validating ASAR integrity, `vm.Script` syntax across all 16 patched JS files, `preload.js` sandbox rules, and DOM translation.
+
+### FAQ
+- **Does it require Python?** Yes, the patcher uses plain Python 3.8+ (`Add python.exe to PATH`) instead of opaque `.exe` binaries so every line can be audited before running.
+- **Why does internal model reasoning stay in English?** Model thinking traces are generated dynamically on remote servers rather than stored in local UI bundles; the patch localizes the Antigravity UI and titles, not live LLM prose.
+- **Does it translate the code editor (IDE) workbench?** It localizes the Antigravity Electron shell, Hub UI, menus, and chat titles; for VS Code / Monaco editor panels you can optionally install the standard *Russian Language Pack*.
 
 ### Disclaimer
 - This is an **unofficial community localization** and is **not affiliated with, endorsed by, or supported by Google LLC**.

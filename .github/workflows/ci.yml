@@ -1,0 +1,73 @@
+name: Verify Patch & Dictionary
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Check Python syntax & CLI help
+        run: |
+          python -m py_compile patch_antigravity_ru.py sync_and_verify.py test_bat_bugs.py
+          python patch_antigravity_ru.py --help
+
+      - name: Verify dictionary hygiene, prompt length & privacy
+        shell: python
+        run: |
+          import pathlib, re, sys
+          sys.path.insert(0, ".")
+          import patch_antigravity_ru as p
+
+          assert len(p.LS_TITLE_PROMPT_OLD) == len(p.LS_TITLE_PROMPT_NEW) == 110
+
+          txt = pathlib.Path("ru_i18n.js").read_text(encoding="utf-8")
+          block = txt[txt.index("const EXACT = {") : txt.index("const REGEX_RULES = [")]
+          keys = re.findall(r'^\s*"((?:\\.|[^"\\])+)":', block, re.M)
+          assert len(keys) == len(set(keys)), "Duplicate keys found in EXACT"
+          print(f"Verified {len(keys)} unique EXACT keys.")
+
+          for path in pathlib.Path(".").rglob("*"):
+              if path.is_file() and ".git" not in path.parts and path.suffix in (".js", ".py", ".bat", ".md", ".txt", ".yml"):
+                  body = path.read_text(encoding="utf-8", errors="ignore")
+                  assert "C:\\Users\\" not in body, f"Hardcoded user path in {path}"
+
+      - name: Check JS syntax & run i18n/DOM translator tests
+        run: |
+          node --check ru_i18n.js
+          node --check ru_dom_translator.js
+          node --check verify_patch.js
+          node -e "
+            const assert = require('assert');
+            const fs = require('fs');
+            const vm = require('vm');
+            const i18n = require('./ru_i18n.js');
+            assert.strictEqual(i18n.translateUiText('New Conversation'), 'Новый чат');
+            assert.strictEqual(i18n.translateUiText('No\u00a0automations yet'), 'Пока нет автоматизаций');
+            assert.strictEqual(i18n.translateUiText('Gemini 4 Hydrogen (XHigh)'), 'Gemini 4 Hydrogen (Сверхвысокая)');
+            const domSrc = fs.readFileSync('ru_dom_translator.js', 'utf8');
+            new vm.Script(domSrc);
+            console.log('Node i18n + DOM script checks passed.');
+          "
+
+      - name: Verify batch scripts --help on Windows cmd
+        shell: cmd
+        run: |
+          call apply_patch.bat --help || exit /b 1
+          call apply_patchSEARCHER.bat --help || exit /b 1
+          call patch_debug.bat --help || exit /b 1
+          call redo_patch.bat --help || exit /b 1
+          call restore_patch.bat --help || exit /b 1
