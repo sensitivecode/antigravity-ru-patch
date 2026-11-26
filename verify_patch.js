@@ -125,6 +125,10 @@ assert.strictEqual(
   "Sonnet 5.5 теперь доступна в платных тарифах Pro и Ultra. Доступ к сторонним моделям на вашем текущем тарифе прекратится 30 ноября 2026 г."
 );
 assert.strictEqual(
+  i18n.translateUiText("Available on paid Google AI Pro and Ultra plans. Not included with your current plan."),
+  "Доступно в платных тарифах Google AI Pro и Ultra. Не входит в ваш текущий тариф."
+);
+assert.strictEqual(
   i18n.translateUiText("Create, edit, review, resize, and brand-check Canva designs with the Canva MCP server."),
   "Создавайте, редактируйте, проверяйте, изменяйте размер и соответствие брендбуку дизайнов Canva через Canva MCP-сервер."
 );

@@ -2124,6 +2124,15 @@ const EXACT = {
   "Add automation": "Добавить автоматизацию",
   "Runs even when your computer is off. Schedules only.": "Работает даже при выключенном компьютере. Только по расписанию.",
   "Runs even when your computer is off. Schedules and events.": "Работает даже при выключенном компьютере. По расписанию и событиям.",
+  "Available on paid Google AI Pro and Ultra plans. Not included with your current plan.": "Доступно в платных тарифах Google AI Pro и Ultra. Не входит в ваш текущий тариф.",
+  "Not included with your current plan.": "Не входит в ваш текущий тариф.",
+  "Not PII/NTK": "Не для PII/NTK",
+  "Do not use for PII/NTK data.": "Не используйте для конфиденциальных данных (PII/NTK).",
+  "Your Remote setting": "Ваша удалённая настройка",
+  "Your This Computer setting": "Настройка этого компьютера",
+  "Default setting": "Настройка по умолчанию",
+  "Workspace setting": "Настройка рабочей области",
+  "Global setting": "Глобальная настройка",
   "Telemetry is disabled in Settings": "Телеметрия отключена в настройках",
   "Project 4K interface without developer tooling.": "Интерфейс Project 4K без инструментов разработчика.",
   "Ignore events triggered by the automation owner to avoid self-trigger loops.": "Игнорировать события, вызванные владельцем автоматизации, чтобы избежать зацикливания.",
@@ -2454,6 +2463,7 @@ const REGEX_RULES = [
   [/^Finish signing in to (.+) in your browser\.$/, (_, name) => `Завершите вход в ${name} в браузере.`],
   [/^Stream and control (.+) directly in the side pane\.$/, (_, name) => `Управляйте ${name} и просматривайте поток прямо в боковой панели.`],
   [/^Could not load (.+):$/, (_, name) => `Не удалось загрузить ${name}:`],
+  [/^Available on paid (.+) plans?\. Not included with your current plan\.$/, (_, plans) => `Доступно в платных тарифах ${plans}. Не входит в ваш текущий тариф.`],
 ];
 
 function translateUiText(input) {
